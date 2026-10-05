@@ -3,6 +3,7 @@
 	import Button from './Button.svelte';
 	import type { IconName } from '../../utils/icons.js';
 	import { setMenu } from '../../context/menu.js';
+	import { anchor } from '../../actions/anchor.js';
 
 	type TriggerProps = { onclick: (e: MouseEvent) => void; 'aria-haspopup': 'menu'; 'aria-expanded': boolean };
 
@@ -32,7 +33,6 @@
 
 	let root: HTMLSpanElement | undefined = $state();
 	let panel: HTMLDivElement | undefined = $state();
-	let above = $state(false);
 
 	function close(refocus = false) {
 		open = false;
@@ -68,21 +68,6 @@
 		const next = e.key === 'Home' ? 0 : e.key === 'End' ? list.length - 1 : e.key === 'ArrowDown' ? (at + 1) % list.length : (at - 1 + list.length) % list.length;
 		list[next]?.focus();
 	}
-
-	$effect(() => {
-		if (!open) return;
-		above = false;
-		requestAnimationFrame(() => {
-			if (!panel) return;
-			const r = panel.getBoundingClientRect();
-			above = r.bottom > window.innerHeight - 8 && r.height < r.top;
-		});
-		const away = (e: MouseEvent) => {
-			if (root && !root.contains(e.target as Node)) close();
-		};
-		document.addEventListener('mousedown', away);
-		return () => document.removeEventListener('mousedown', away);
-	});
 </script>
 
 <span class="o-menu-root" bind:this={root}>
@@ -96,7 +81,7 @@
 		{/if}
 	{/if}
 	{#if open}
-		<div class="o-menu" class:o-above={above} bind:this={panel} role="menu" tabindex="-1" style="{align}: 0" style:min-width={width} {onkeydown}>
+		<div class="o-menu" bind:this={panel} role="menu" tabindex="-1" style:min-width={width} {onkeydown} use:anchor={{ to: root, align: align === 'right' ? 'end' : 'start', onoutside: () => close() }}>
 			{@render children()}
 		</div>
 	{/if}
@@ -104,6 +89,5 @@
 
 <style>
 	.o-menu-root { position: relative; display: inline-flex; }
-	.o-menu { position: absolute; top: calc(100% + 4px); z-index: 30; min-width: 200px; max-height: min(420px, 70vh); overflow: auto; background: var(--o-surface); color: var(--o-text); border: var(--o-line) solid var(--o-border-strong); border-radius: var(--o-radius); box-shadow: var(--o-shadow-lg); padding: 4px; outline: none; }
-	.o-above { top: auto; bottom: calc(100% + 4px); }
+	.o-menu { z-index: 30; min-width: 200px; max-height: min(420px, var(--o-anchor-room, 70vh)); overflow: auto; background: var(--o-surface); color: var(--o-text); border: var(--o-line) solid var(--o-border-strong); border-radius: var(--o-radius); box-shadow: var(--o-shadow-lg); padding: 4px; outline: none; }
 </style>

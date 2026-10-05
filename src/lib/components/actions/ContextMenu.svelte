@@ -1,42 +1,33 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { setMenu } from '../../context/menu.js';
+	import { anchor } from '../../actions/anchor.js';
 
-	let { at = $bindable(null), children }: { at?: { x: number; y: number } | null; children: Snippet } = $props();
+	let { at = $bindable(null), children }: { at?: { x: number; y: number } | HTMLElement | null; children: Snippet } = $props();
 
 	let panel: HTMLDivElement | undefined = $state();
-	let pos = $state({ x: 0, y: 0 });
-	setMenu(() => (at = null));
-
-	$effect(() => {
-		if (!at) return;
-		pos = { ...at };
-		requestAnimationFrame(() => {
-			if (!panel || !at) return;
-			const r = panel.getBoundingClientRect();
-			pos = { x: Math.min(at.x, window.innerWidth - r.width - 8), y: Math.min(at.y, window.innerHeight - r.height - 8) };
-			panel.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
-		});
-		const away = (e: MouseEvent) => {
-			if (panel && !panel.contains(e.target as Node)) at = null;
-		};
-		const key = (e: KeyboardEvent) => {
-			if (e.key === 'Escape') at = null;
-		};
-		const t = setTimeout(() => document.addEventListener('mousedown', away));
-		document.addEventListener('keydown', key);
-		window.addEventListener('scroll', close, true);
-		return () => {
-			clearTimeout(t);
-			document.removeEventListener('mousedown', away);
-			document.removeEventListener('keydown', key);
-			window.removeEventListener('scroll', close, true);
-		};
-	});
+	setMenu(() => close());
 
 	function close() {
 		at = null;
 	}
+
+	$effect(() => {
+		if (!at) return;
+		panel?.querySelector<HTMLElement>('[role="menuitem"]')?.focus({ preventScroll: true });
+		const key = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') close();
+		};
+		const scrolled = (e: Event) => {
+			if (!panel?.contains(e.target as Node)) close();
+		};
+		document.addEventListener('keydown', key);
+		window.addEventListener('scroll', scrolled, true);
+		return () => {
+			document.removeEventListener('keydown', key);
+			window.removeEventListener('scroll', scrolled, true);
+		};
+	});
 
 	function onkeydown(e: KeyboardEvent) {
 		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -48,11 +39,11 @@
 </script>
 
 {#if at}
-	<div class="o-context" bind:this={panel} role="menu" tabindex="-1" style:left="{pos.x}px" style:top="{pos.y}px" {onkeydown}>
+	<div class="o-context" bind:this={panel} role="menu" tabindex="-1" {onkeydown} use:anchor={{ to: at, gap: at instanceof HTMLElement ? 4 : 0, onoutside: close }}>
 		{@render children()}
 	</div>
 {/if}
 
 <style>
-	.o-context { position: fixed; z-index: 60; min-width: 200px; background: var(--o-surface); color: var(--o-text); border: var(--o-line) solid var(--o-border-strong); border-radius: var(--o-radius); box-shadow: var(--o-shadow-lg); padding: 4px; outline: none; }
+	.o-context { z-index: 60; min-width: 200px; max-height: min(420px, var(--o-anchor-room, 70vh)); overflow: auto; background: var(--o-surface); color: var(--o-text); border: var(--o-line) solid var(--o-border-strong); border-radius: var(--o-radius); box-shadow: var(--o-shadow-lg); padding: 4px; outline: none; }
 </style>

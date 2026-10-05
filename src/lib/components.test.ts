@@ -1,7 +1,10 @@
-import { flushSync, mount, unmount } from 'svelte';
+import { createRawSnippet, flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import Button from './components/actions/Button.svelte';
 import Checkbox from './components/forms/Checkbox.svelte';
+import Combobox from './components/forms/Combobox.svelte';
+import ContextMenu from './components/actions/ContextMenu.svelte';
+import Menu from './components/actions/Menu.svelte';
 import Select from './components/forms/Select.svelte';
 import Tabs from './components/forms/Tabs.svelte';
 import Overlays from './components/overlays/Overlays.svelte';
@@ -90,5 +93,79 @@ describe('Overlays', () => {
 		toast.ok('Saved');
 		flushSync();
 		expect(document.querySelector('[role="status"]')?.textContent).toContain('Saved');
+	});
+});
+
+const menuItems = createRawSnippet(() => ({ render: () => '<div><button role="menuitem">One</button><button role="menuitem">Two</button></div>' }));
+const key = (el: Element, k: string) => {
+	el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+	flushSync();
+};
+const pointerdown = (el: Element) => {
+	el.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+	flushSync();
+};
+
+describe('Combobox', () => {
+	it('filters as you type and picks with the keyboard', () => {
+		const picked: unknown[] = [];
+		const t = render(Combobox, { value: null, options: [['de', 'Germany'], ['es', 'Spain'], ['fr', 'France']], label: 'Country', onchange: (v: unknown) => picked.push(v) });
+		const input = t.querySelector('input')!;
+		expect(input.getAttribute('role')).toBe('combobox');
+		input.value = 'an';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		flushSync();
+		const labels = () => [...t.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim());
+		expect(labels()).toEqual(['Germany', 'France']);
+		key(input, 'ArrowDown');
+		expect(input.getAttribute('aria-activedescendant')).toBe(t.querySelectorAll('[role="option"]')[1].id);
+		key(input, 'Enter');
+		expect(picked).toEqual(['fr']);
+		expect(t.querySelector('[role="listbox"]')).toBeNull();
+		expect(input.value).toBe('France');
+	});
+
+	it('closes on Escape without changing the value, and says when nothing matches', () => {
+		const t = render(Combobox, { value: 'es', options: [['es', 'Spain']], empty: 'No country' });
+		const input = t.querySelector('input')!;
+		expect(input.value).toBe('Spain');
+		input.value = 'zz';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		flushSync();
+		expect(t.textContent).toContain('No country');
+		key(input, 'Escape');
+		expect(t.querySelector('[role="listbox"]')).toBeNull();
+		expect(input.value).toBe('Spain');
+	});
+});
+
+describe('Menu', () => {
+	it('opens fixed next to its trigger and closes on a pointer down outside', () => {
+		const t = render(Menu, { children: menuItems });
+		t.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')!.click();
+		flushSync();
+		const panel = t.querySelector<HTMLElement>('[role="menu"]')!;
+		expect(panel.style.position).toBe('fixed');
+		expect(panel.dataset.side).toBe('bottom');
+		pointerdown(panel.querySelector('button')!);
+		expect(t.querySelector('[role="menu"]')).not.toBeNull();
+		pointerdown(document.body);
+		expect(t.querySelector('[role="menu"]')).toBeNull();
+	});
+});
+
+describe('ContextMenu', () => {
+	it('anchors to an element as well as a point, and Escape closes it', () => {
+		const header = document.createElement('button');
+		document.body.appendChild(header);
+		const t = render(ContextMenu, { at: header, children: menuItems });
+		const panel = t.querySelector<HTMLElement>('[role="menu"]')!;
+		expect(panel.style.position).toBe('fixed');
+		expect(document.activeElement?.textContent).toBe('One');
+		pointerdown(header);
+		expect(t.querySelector('[role="menu"]')).not.toBeNull();
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+		flushSync();
+		expect(t.querySelector('[role="menu"]')).toBeNull();
 	});
 });

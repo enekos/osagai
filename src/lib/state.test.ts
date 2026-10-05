@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ListCursor } from './state/cursor.svelte.js';
 import { dialogs, confirm, prompt } from './state/dialog.svelte.js';
 import { task } from './state/task.svelte.js';
 import { toast } from './state/toast.svelte.js';
 import { errorMessage } from './utils/errors.js';
 import { iconNames, registerIcons } from './utils/icons.js';
 import { toOptions } from './utils/options.js';
+import { placeBox } from './utils/position.js';
 
 afterEach(() => {
 	toast.clear();
@@ -129,5 +131,86 @@ describe('icons', () => {
 		registerIcons({ 'my-thing': 'M0 0h1' });
 		expect(iconNames()).toContain('my-thing');
 		expect(iconNames()).toContain('plus');
+	});
+});
+
+describe('placeBox', () => {
+	const view = { width: 1000, height: 800 };
+	const panel = { width: 200, height: 300 };
+
+	it('opens below the anchor, start-aligned, when there is room', () => {
+		expect(placeBox({ left: 100, top: 100, width: 80, height: 30 }, panel, view)).toEqual({ left: 100, top: 134, side: 'bottom', room: 658 });
+	});
+
+	it('flips above when below is too short and above fits', () => {
+		const p = placeBox({ left: 100, top: 600, width: 80, height: 30 }, panel, view);
+		expect(p.side).toBe('top');
+		expect(p.top).toBe(600 - 4 - 300);
+	});
+
+	it('stays on the roomier side when neither fits, and reports the room to cap height', () => {
+		const tall = { width: 200, height: 700 };
+		const p = placeBox({ left: 100, top: 300, width: 80, height: 30 }, tall, view);
+		expect(p.side).toBe('bottom');
+		expect(p.room).toBe(800 - 330 - 4 - 8);
+		expect(placeBox({ left: 100, top: 500, width: 80, height: 30 }, tall, view)).toMatchObject({ side: 'top', top: 8, room: 488 });
+	});
+
+	it('end-aligns to the anchor and clamps into the viewport', () => {
+		expect(placeBox({ left: 700, top: 100, width: 100, height: 30 }, panel, view, { align: 'end' }).left).toBe(600);
+		expect(placeBox({ left: 900, top: 100, width: 50, height: 30 }, panel, view).left).toBe(1000 - 200 - 8);
+		expect(placeBox({ left: -40, top: 100, width: 50, height: 30 }, panel, view).left).toBe(8);
+	});
+
+	it('covers the anchor: top edges meet below, bottom edges meet when flipped', () => {
+		expect(placeBox({ left: 100, top: 100, width: 80, height: 40 }, panel, view, { cover: true })).toMatchObject({ top: 100, side: 'bottom', room: 692 });
+		expect(placeBox({ left: 100, top: 600, width: 80, height: 40 }, panel, view, { cover: true })).toMatchObject({ top: 340, side: 'top' });
+	});
+
+	it('treats a point as a zero-size anchor', () => {
+		expect(placeBox({ left: 50, top: 50, width: 0, height: 0 }, panel, view, { gap: 0 })).toMatchObject({ left: 50, top: 50, side: 'bottom' });
+	});
+});
+
+describe('ListCursor', () => {
+	const key = (k: string) => new KeyboardEvent('keydown', { key: k, cancelable: true });
+
+	it('clamps by default and wraps with loop', () => {
+		let n = 3;
+		const clamped = new ListCursor(() => n);
+		clamped.move(-1);
+		expect(clamped.active).toBe(0);
+		clamped.move(5);
+		expect(clamped.active).toBe(2);
+		const looped = new ListCursor(() => n, { loop: true });
+		looped.move(-1);
+		expect(looped.active).toBe(2);
+		looped.move(1);
+		expect(looped.active).toBe(0);
+		n = 0;
+		expect(looped.index).toBe(-1);
+	});
+
+	it('handles arrows and Enter, and leaves Home/End to the input unless asked', () => {
+		const picked: number[] = [];
+		const c = new ListCursor(() => 4);
+		const down = key('ArrowDown');
+		expect(c.keydown(down, (i) => picked.push(i))).toBe(true);
+		expect(down.defaultPrevented).toBe(true);
+		c.keydown(key('Enter'), (i) => picked.push(i));
+		expect(picked).toEqual([1]);
+		expect(c.keydown(key('End'), () => {})).toBe(false);
+		const withEnds = new ListCursor(() => 4, { homeEnd: true });
+		withEnds.keydown(key('End'), () => {});
+		expect(withEnds.active).toBe(3);
+		expect(c.keydown(key('a'), () => {})).toBe(false);
+	});
+
+	it('keeps index inside a list that shrank', () => {
+		let n = 5;
+		const c = new ListCursor(() => n);
+		c.to(4);
+		n = 2;
+		expect(c.index).toBe(1);
 	});
 });

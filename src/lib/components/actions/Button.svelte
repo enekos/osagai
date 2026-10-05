@@ -16,6 +16,7 @@
 		flat?: boolean;
 		pressed?: boolean;
 		block?: boolean;
+		wrap?: boolean;
 		children?: Snippet;
 	};
 	type Props = Common & ((Omit<HTMLButtonAttributes, 'children'> & { href?: undefined }) | (Omit<HTMLAnchorAttributes, 'children'> & { href: string }));
@@ -31,6 +32,7 @@
 		flat = false,
 		pressed,
 		block = false,
+		wrap = false,
 		children,
 		href,
 		class: className = '',
@@ -39,7 +41,7 @@
 
 	const iconSize = $derived(size === 'sm' ? 14 : 16);
 	const square = $derived(!children && !!(icon || loading));
-	const classes = $derived(['o-btn', `o-${variant}`, `o-${size}`, danger && 'o-danger', square && 'o-square', flat && 'o-flat', pressed && 'o-pressed', block && 'o-block', className].filter(Boolean).join(' '));
+	const classes = $derived(['o-btn', `o-${variant}`, `o-${size}`, danger && 'o-danger', square && 'o-square', flat && 'o-flat', pressed && 'o-pressed', block && 'o-block', wrap && 'o-wrap', className].filter(Boolean).join(' '));
 </script>
 
 {#snippet inner()}
@@ -93,4 +95,6 @@
 	.o-square { width: var(--o-control-h); padding: 0; }
 	.o-square.o-sm { width: var(--o-control-h-sm); }
 	.o-block { width: 100%; }
+	.o-wrap { white-space: normal; height: auto; min-height: var(--o-control-h); padding-block: 6px; flex-shrink: 1; max-width: 100%; text-align: center; line-height: 1.3; }
+	.o-wrap.o-sm { min-height: var(--o-control-h-sm); padding-block: 4px; }
 </style>

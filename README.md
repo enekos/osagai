@@ -57,7 +57,7 @@ Import the theme once, add the base styles if you want element defaults and util
 
 | | What it is | Notable props |
 |---|---|---|
-| `Button` | a button, or a link when it gets `href` | `variant` default·primary·ai·ghost, `danger`, `size` md·sm, `icon`, `iconRight`, `loading`, `pressed`, `block`, `flat`. Leave out the children and it becomes a square icon button whose `label` is its `aria-label` and tooltip. It defaults to `type="button"`. |
+| `Button` | a button, or a link when it gets `href` | `variant` default·primary·ai·ghost, `danger`, `size` md·sm, `icon`, `iconRight`, `loading`, `pressed`, `block`, `flat`, `wrap` (lets a long label wrap onto more lines). Leave out the children and it becomes a square icon button whose `label` is its `aria-label` and tooltip. It defaults to `type="button"`. |
 | `Field` | a label + a control + a hint or an error | `label` (string or snippet), `hint`, `error`, `optional`, `grow`, an `aside` snippet. It gives its control an `id` and `aria-describedby` through context, so `for=`/`id=` pairs are never needed. |
 | `Input` `Textarea` | text controls | `bind:value`, `size`, `mono`, `bind:element`; any other attribute passes through |
 | `Select` | a native select | `options` accepts `['a', 'b']`, `[['a', 'Label A']]` or `[{ value, label, disabled }]`, and values keep their type (`true`, `3`, `null`). Also `placeholder` (a `null` option) and `size`. Children can still be raw `<option>`s. |

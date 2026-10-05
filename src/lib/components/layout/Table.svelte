@@ -16,7 +16,7 @@
 </script>
 
 <div class="o-table-wrap" class:o-scroll={scroll} class:o-framed={framed} style:max-height={maxHeight}>
-	<table class="o-table {className}" class:o-compact={compact} class:o-sticky={sticky} style:min-width="{minWidth}px" {...rest}>
+	<table class="o-table {className}" class:o-compact={compact} class:o-sticky={sticky} style:min-width={minWidth ? `${minWidth}px` : undefined} {...rest}>
 		{@render children()}
 	</table>
 </div>

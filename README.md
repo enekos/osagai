@@ -2,7 +2,7 @@
 
 A small component kit for Svelte 5. It has no dependencies. It covers what an app UI needs every day: buttons, form fields, menus, dialogs, toasts, tables, tabs and page layout. It also has an imperative `confirm()`/`prompt()` and a `task()` helper, which together remove most of the `busy`/`try`/`catch`/`toast` boilerplate. Every visual decision is a CSS variable, and light and dark themes are built in.
 
-*Osagai* is Basque for "component". It started as the UI layer of [bikote](https://github.com/enekos/bikote).
+*Osagai* is Basque for "component".
 
 ```svelte
 <script lang="ts">
@@ -64,13 +64,13 @@ Import the theme once, add the base styles if you want element defaults and util
 | `Combobox` | a text input that filters a list of options | `bind:value`, `options` (same shapes as `Select`), `placeholder`, `empty` (the no-match text), `size`, `label`, `onchange`. Arrow keys move, Enter picks, Escape closes and keeps the old value. |
 | `Listbox` | the option list behind `Combobox`, for building your own | `items`, `bind:active`, `onpick(item, index)`, an `item(item, { index, active })` snippet, an `empty` snippet, `id`. Each option's id is `` `${id}-${index}` ``, so the input that owns the keyboard can point `aria-activedescendant` at it. Options pick on mousedown, so the input keeps focus. |
 | `Checkbox` `Switch` `RadioGroup` | choices | `bind:checked` (undefined is fine), `label`, `hint`; `RadioGroup` takes `bind:value` + `options` |
-| `Tabs` | a segmented control | `bind:value`, `items` (same shapes as `options`, plus `badge`), `size`, `block`, `onchange` |
+| `Tabs` | a segmented control | `bind:value`, `items` (same shapes as `options`, plus `badge`), `size`, `block`, `onchange`. Roving tabindex: arrow keys/Home/End move focus between tabs. |
 | `Dropzone` | file drop + click to choose | `onfiles(files)`, `accept`, `multiple`, `busy`, `title`, `hint` |
 | `Chip` | a small toggle or insert button | `selected`, `mono` |
 | `Menu` `MenuItem` `MenuSeparator` | a dropdown that owns its open state | `icon`/`text`/`label` for the default trigger, or a `trigger(props)` snippet to spread on your own button. Arrow keys, Escape and click-outside all work. Items take `icon`, `danger`, `checked`, `href`, `hint`, and close the menu when clicked. |
 | `ContextMenu` | a menu at a point or under an element | `bind:at={{ x, y } \| element \| null}`, with `MenuItem` children. It closes on Escape, on a click outside and on scroll. |
-| `Modal` | a dialog | `bind:open`, `title`, `size` sm·md·lg·xl or `width`, `footer` and `headerActions` snippets, `dismissible`, `onclose`. It focuses its first field, restores focus on close, locks scroll, and lets Escape close only the top dialog. |
-| `Drawer` | a side panel | `bind:open`, `title`, `width`, `actions` snippet |
+| `Modal` | a dialog | `bind:open`, `title`, `size` sm·md·lg·xl or `width`, `footer` and `headerActions` snippets, `dismissible`, `onclose`. It focuses its first field, traps Tab inside the dialog, restores focus on close, locks scroll, and lets Escape close only the top dialog. |
+| `Drawer` | a side panel | `bind:open`, `title`, `width`, `actions` snippet. Same focus handling as `Modal`: `role="dialog"`, initial focus, a Tab trap and focus restore on close. |
 | `Page` | the page frame and header | `title`/`description` (string or snippet), `back={{ href, label }}`, `eyebrow`, `actions` snippet, `width` |
 | `Card` | a bordered surface | `title`, `description`, `actions` snippet, `padding` none·sm·md, `tone` soft·danger·accent |
 | `Tile` | a card that is a link or a button | `title`, `icon`, `description`, `href` or `onclick`, `dashed`, `accent`, `aside` snippet, children as meta text. The title is a stretched link, so controls in `aside` stay clickable. |
@@ -154,7 +154,7 @@ src/lib/
   actions/      anchor
   state/        toast, dialog, task, cursor (runes, .svelte.ts)
   context/      field and menu context keys
-  utils/        icons, options, errors, position
+  utils/        icons, options, errors, position, focus
   styles/       theme.css, base.css
 ```
 

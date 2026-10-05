@@ -6,6 +6,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import Icon from '../display/Icon.svelte';
+	import { trapTab } from '../../utils/focus.js';
 
 	let {
 		open = $bindable(false),
@@ -39,10 +40,13 @@
 	}
 
 	function onkeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape' && stack.at(-1) === me) {
+		if (stack.at(-1) !== me) return;
+		if (e.key === 'Escape') {
 			e.stopPropagation();
 			close();
+			return;
 		}
+		if (e.key === 'Tab' && panel) trapTab(e, panel);
 	}
 
 	$effect(() => {

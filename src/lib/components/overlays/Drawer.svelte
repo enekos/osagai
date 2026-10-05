@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import Icon from '../display/Icon.svelte';
+	import { trapTab } from '../../utils/focus.js';
 
 	let {
 		open = $bindable(false),
@@ -11,19 +12,35 @@
 		children
 	}: { open?: boolean; title: string; width?: string; onclose?: () => void; actions?: Snippet; children: Snippet } = $props();
 
+	let panel: HTMLElement | undefined = $state();
+
 	function close() {
 		open = false;
 		onclose?.();
 	}
 	function onkeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape' && !document.querySelector('[aria-modal="true"]')) close();
+		if (e.key === 'Escape') {
+			if (!document.querySelector('.o-modal')) close();
+			return;
+		}
+		if (e.key === 'Tab' && panel) trapTab(e, panel);
 	}
+
+	$effect(() => {
+		if (!open) return;
+		const before = document.activeElement as HTMLElement | null;
+		requestAnimationFrame(() => {
+			if (!panel || panel.contains(document.activeElement)) return;
+			(panel.querySelector<HTMLElement>('[autofocus]') ?? panel).focus();
+		});
+		return () => before?.focus?.();
+	});
 </script>
 
 <svelte:window onkeydown={open ? onkeydown : undefined} />
 
 {#if open}
-	<aside class="o-drawer" style:width="min({width}, 100vw)" aria-label={title}>
+	<div class="o-drawer" style:width="min({width}, 100vw)" role="dialog" aria-modal="true" aria-label={title} tabindex="-1" bind:this={panel}>
 		<header>
 			<div class="o-title">
 				<button type="button" class="o-close" onclick={close} aria-label="Close"><Icon name="x" size={15} /></button>
@@ -32,7 +49,7 @@
 			{#if actions}<div class="o-actions">{@render actions()}</div>{/if}
 		</header>
 		<div class="o-body">{@render children()}</div>
-	</aside>
+	</div>
 {/if}
 
 <style>

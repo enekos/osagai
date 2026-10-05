@@ -1,6 +1,6 @@
 {
 	"name": "@enekos/osagai",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "A small, dependency-free component kit for Svelte 5: buttons, fields, menus, dialogs, toasts, tables and an imperative confirm, themed by CSS variables with light and dark built in.",
 	"license": "MIT",
 	"type": "module",

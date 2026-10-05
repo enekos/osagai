@@ -14,7 +14,7 @@
 
 	$effect(() => {
 		if (!at) return;
-		panel?.querySelector<HTMLElement>('[role="menuitem"]')?.focus({ preventScroll: true });
+		panel?.querySelector<HTMLElement>('[role^="menuitem"]')?.focus({ preventScroll: true });
 		const key = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') close();
 		};
@@ -32,7 +32,7 @@
 	function onkeydown(e: KeyboardEvent) {
 		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
 		e.preventDefault();
-		const list = panel ? [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')] : [];
+		const list = panel ? [...panel.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([disabled])')] : [];
 		const i = list.indexOf(document.activeElement as HTMLElement);
 		list[(i + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length]?.focus();
 	}

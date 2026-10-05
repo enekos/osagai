@@ -11,15 +11,28 @@
 	}: { value: T; items: readonly OptionInput<T>[]; size?: 'md' | 'sm'; label?: string; block?: boolean; onchange?: (value: T) => void } = $props();
 
 	const options = $derived(toOptions(items));
+	let root: HTMLDivElement | undefined = $state();
+
 	function pick(v: T) {
 		value = v;
 		onchange?.(v);
 	}
+
+	function onkeydown(e: KeyboardEvent) {
+		if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Home' && e.key !== 'End') return;
+		e.preventDefault();
+		const tabs = root ? [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)')] : [];
+		if (!tabs.length) return;
+		const at = tabs.indexOf(document.activeElement as HTMLButtonElement);
+		const next = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : e.key === 'ArrowRight' ? (at + 1 + tabs.length) % tabs.length : (at - 1 + tabs.length) % tabs.length;
+		tabs[next]?.focus();
+		tabs[next]?.click();
+	}
 </script>
 
-<div class="o-tabs o-{size}" class:o-block={block} role="tablist" aria-label={label}>
+<div class="o-tabs o-{size}" class:o-block={block} role="tablist" aria-label={label} tabindex="-1" bind:this={root} {onkeydown}>
 	{#each options as o}
-		<button type="button" role="tab" aria-selected={o.value === value} class:o-active={o.value === value} disabled={o.disabled} onclick={() => pick(o.value)}>{o.label}{#if o.badge}<span class="o-count">{o.badge}</span>{/if}</button>
+		<button type="button" role="tab" tabindex={o.value === value ? 0 : -1} aria-selected={o.value === value} class:o-active={o.value === value} disabled={o.disabled} onclick={() => pick(o.value)}>{o.label}{#if o.badge}<span class="o-count">{o.badge}</span>{/if}</button>
 	{/each}
 </div>
 

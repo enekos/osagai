@@ -32,7 +32,14 @@
 {#if href}
 	<a class="o-item" class:o-danger={danger} role="menuitem" {href} onclick={click}>{@render body()}</a>
 {:else}
-	<button type="button" class="o-item" class:o-danger={danger} role="menuitem" {disabled} onclick={click}>{@render body()}</button>
+	<button
+		type="button"
+		class="o-item"
+		class:o-danger={danger}
+		role={checked === undefined ? 'menuitem' : 'menuitemcheckbox'}
+		aria-checked={checked}
+		{disabled}
+		onclick={click}>{@render body()}</button>
 {/if}
 
 <style>

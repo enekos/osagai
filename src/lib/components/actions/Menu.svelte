@@ -52,7 +52,7 @@
 	};
 
 	function items(): HTMLElement[] {
-		return panel ? [...panel.querySelectorAll<HTMLElement>('[role="menuitem"]:not([disabled])')] : [];
+		return panel ? [...panel.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([disabled])')] : [];
 	}
 
 	function onkeydown(e: KeyboardEvent) {

@@ -6,11 +6,12 @@
 		value = $bindable(),
 		size = 'md',
 		mono = false,
+		bare = false,
 		id,
 		element = $bindable(),
 		class: className = '',
 		...rest
-	}: Omit<HTMLInputAttributes, 'size'> & { size?: 'md' | 'sm'; mono?: boolean; element?: HTMLInputElement } = $props();
+	}: Omit<HTMLInputAttributes, 'size'> & { size?: 'md' | 'sm'; mono?: boolean; bare?: boolean; element?: HTMLInputElement } = $props();
 
 	const field = getField();
 </script>
@@ -23,6 +24,7 @@
 	aria-invalid={field?.invalid || undefined}
 	class="o-control o-{size} {className}"
 	class:o-mono={mono}
+	class:o-bare={bare}
 	{...rest} />
 
 <style>
@@ -37,4 +39,6 @@
 	.o-control[aria-invalid="true"] { border-color: var(--o-danger); }
 	.o-sm { min-height: var(--o-control-h-sm); padding: 4px 8px; font-size: 13px; }
 	.o-mono { font-family: var(--o-mono); font-size: 12.5px; }
+	.o-bare, .o-bare:disabled { border-color: transparent; background: transparent; border-radius: 0; padding-inline: 0; min-height: 0; box-shadow: none; }
+	.o-bare:focus { border-color: transparent; border-bottom-color: var(--o-accent); box-shadow: none; }
 </style>

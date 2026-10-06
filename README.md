@@ -1,6 +1,6 @@
 # @enekos/osagai
 
-A small component kit for Svelte 5. It has no dependencies. It covers what an app UI needs every day: buttons, form fields, menus, dialogs, toasts, tables, tabs and page layout. It also has an imperative `confirm()`/`prompt()` and a `task()` helper, which together remove most of the `busy`/`try`/`catch`/`toast` boilerplate. Every visual decision is a CSS variable, and light and dark themes are built in.
+A small component kit for Svelte 5. It has no dependencies. It covers what an app UI needs every day: buttons, form fields, menus, dialogs, toasts, tables, tabs and page layout. It also has an imperative `confirm()`/`prompt()`, a `task()` helper for writes and a `query()` helper for reads, which together remove most of the `busy`/`try`/`catch`/`toast` boilerplate, and a `draft()` helper that tracks unsaved changes. Every visual decision is a CSS variable, and light and dark themes are built in.
 
 *Osagai* is Basque for "component".
 
@@ -57,13 +57,14 @@ Import the theme once, add the base styles if you want element defaults and util
 
 | | What it is | Notable props |
 |---|---|---|
-| `Button` | a button, or a link when it gets `href` | `variant` default·primary·ai·ghost, `danger`, `size` md·sm, `icon`, `iconRight`, `loading`, `pressed`, `block`, `flat`, `wrap` (lets a long label wrap onto more lines). Leave out the children and it becomes a square icon button whose `label` is its `aria-label` and tooltip. It defaults to `type="button"`. |
+| `Button` | a button, or a link when it gets `href` | `variant` default·primary·ai·ghost, `danger`, `size` md·sm, `icon`, `iconRight`, `loading`, `pressed`, `block`, `flat`, `wrap` (lets a long label wrap onto more lines). Leave out the children and it becomes a square icon button whose `label` is its `aria-label` and tooltip. A `title` on any button is shown as a tooltip too, never as the native one. It defaults to `type="button"`. |
 | `Field` | a label + a control + a hint or an error | `label` (string or snippet), `hint`, `error`, `optional`, `grow`, an `aside` snippet. It gives its control an `id` and `aria-describedby` through context, so `for=`/`id=` pairs are never needed. |
-| `Input` `Textarea` | text controls | `bind:value`, `size`, `mono`, `bind:element`; any other attribute passes through |
+| `Input` `Textarea` | text controls | `bind:value`, `size`, `mono`, `bare` (no border or padding, inherits the font: an editable title), `bind:element`; any other attribute passes through |
 | `Select` | a native select | `options` accepts `['a', 'b']`, `[['a', 'Label A']]` or `[{ value, label, disabled }]`, and values keep their type (`true`, `3`, `null`). Also `placeholder` (a `null` option) and `size`. Children can still be raw `<option>`s. |
 | `Combobox` | a text input that filters a list of options | `bind:value`, `options` (same shapes as `Select`), `placeholder`, `empty` (the no-match text), `size`, `label`, `onchange`. Arrow keys move, Enter picks, Escape closes and keeps the old value. |
 | `Listbox` | the option list behind `Combobox`, for building your own | `items`, `bind:active`, `onpick(item, index)`, an `item(item, { index, active })` snippet, an `empty` snippet, `id`. Each option's id is `` `${id}-${index}` ``, so the input that owns the keyboard can point `aria-activedescendant` at it. Options pick on mousedown, so the input keeps focus. |
 | `Checkbox` `Switch` `RadioGroup` | choices | `bind:checked` (undefined is fine), `label`, `hint`; `RadioGroup` takes `bind:value` + `options` |
+| `Choice` | a radio group drawn as cards | `bind:value`, `options` (same shapes as `Select`, plus `description` and `icon`), `columns`, `label`, `onchange`. Arrow keys move and pick, disabled options are skipped. |
 | `Tabs` | a segmented control | `bind:value`, `items` (same shapes as `options`, plus `badge`), `size`, `block`, `onchange`. Roving tabindex: arrow keys/Home/End move focus between tabs. |
 | `Dropzone` | file drop + click to choose | `onfiles(files)`, `accept`, `multiple`, `busy`, `title`, `hint` |
 | `Chip` | a small toggle or insert button | `selected`, `mono` |
@@ -96,6 +97,71 @@ save.pending;          // reactive, for <Button loading={save.pending}>
 ```
 
 Requests queue up, so two `confirm()` calls show one after the other.
+
+### Reads: `query()`
+
+`query()` is the read-side twin of `task()`. Call it while the component is being set up: it runs at once, reruns when anything it read changes (`ws` below), and keeps the last data while it reloads.
+
+```svelte
+<script>
+	import { query, Skeleton, Empty, Notice, errorMessage } from '@enekos/osagai';
+	const things = query(() => api.get(`/w/${ws}/things`).then((r) => r.items), { every: 5000 });
+</script>
+
+{#if things.error}
+	<Notice tone="error">{errorMessage(things.error)}</Notice>
+{:else if !things.loaded}
+	<Skeleton />
+{:else if things.data.length === 0}
+	<Empty title="No things yet" />
+{:else}
+	…
+{/if}
+```
+
+- `data`, `pending`, `loaded` and `error` are reactive. `loaded` turns true after the first successful load and stays true, so `pending` alone never hides what is already on screen.
+- `reload()` fetches again and returns the result. `set(value)` replaces the data without a fetch, for when a save already returned the new object.
+- A response that arrives after a newer load started is dropped.
+- `every: ms` polls, waiting for the previous response first and pausing while the tab is hidden. `enabled: () => boolean` stops the query (and the polling) while it is false.
+- Errors stay inline in `error` so the page can show them where the data was. `toastErrors: true` toasts them as well.
+
+### Unsaved changes: `draft()`
+
+`draft()` watches a value and tells you whether it differs from the last snapshot. Nothing is set by hand.
+
+```svelte
+<script>
+	import { draft } from '@enekos/osagai';
+	let form = $state({ name: '', steps: [] });
+	const d = draft(() => form);
+	const save = task(async () => { await api.put('/things/1', form); d.commit(); }, { success: 'Saved' });
+</script>
+
+<Button variant="primary" loading={save.pending} disabled={!d.dirty} onclick={() => save()}>{d.dirty ? 'Save' : 'Saved'}</Button>
+```
+
+- `dirty` is derived by comparing a `$state.snapshot` of the value with the last committed one (`JSON.stringify` by default, or pass `equal`).
+- Call `commit()` after loading the value and after each save.
+- While dirty it answers `beforeunload`, so closing the tab asks first; `guard: false` turns that off. In-app navigation is the router's business, so the kit only exposes the predicate. In SvelteKit:
+
+```ts
+beforeNavigate((nav) => {
+	if (!d.dirty || nav.type === 'leave' || !nav.to) return;
+	nav.cancel();
+	confirm({ title: 'Leave without saving?', confirmLabel: 'Leave' }).then((ok) => ok && goto(nav.to!.url));
+});
+```
+
+## Tooltips
+
+`Button` shows its `title` and an icon button's `label` as a tooltip. The same action works on anything:
+
+```svelte
+<span use:tooltip={'Filled by AI'}>…</span>
+<span use:tooltip={{ text: col.description, side: 'bottom', delay: 500 }}>…</span>
+```
+
+It opens after a short hover (350ms) or on keyboard focus, flips to the side with room, closes on pointer leave, blur, pointer down and Escape, and ignores touch. While open it sets `aria-describedby` on the element, unless the text is already its `aria-label`. Tooltips render inside `<Overlays />`, like toasts, so pass an empty text to show nothing.
 
 ## Anchored panels
 
@@ -146,13 +212,13 @@ The tokens are: surfaces `--o-bg`, `--o-surface`, `--o-surface-2`, `--o-surface-
 src/lib/
   components/
     actions/    Button, Chip, Menu, MenuItem, MenuSeparator, ContextMenu
-    forms/      Field, Input, Textarea, Select, Combobox, Listbox, Checkbox, Switch, RadioGroup, Tabs, Dropzone
+    forms/      Field, Input, Textarea, Select, Combobox, Listbox, Checkbox, Switch, RadioGroup, Choice, Tabs, Dropzone
     overlays/   Modal, Drawer, Overlays
     layout/     Page, Card, Tile, Table
     feedback/   Notice, Empty, Spinner, Skeleton
     display/    Badge, Stat, Avatar, Kbd, Icon
-  actions/      anchor
-  state/        toast, dialog, task, cursor (runes, .svelte.ts)
+  actions/      anchor, tooltip
+  state/        toast, dialog, tooltip, task, query, draft, cursor (runes, .svelte.ts)
   context/      field and menu context keys
   utils/        icons, options, errors, position, focus
   styles/       theme.css, base.css

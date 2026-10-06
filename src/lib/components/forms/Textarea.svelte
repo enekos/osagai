@@ -5,11 +5,12 @@
 	let {
 		value = $bindable(),
 		mono = false,
+		bare = false,
 		id,
 		element = $bindable(),
 		class: className = '',
 		...rest
-	}: HTMLTextareaAttributes & { mono?: boolean; element?: HTMLTextAreaElement } = $props();
+	}: HTMLTextareaAttributes & { mono?: boolean; bare?: boolean; element?: HTMLTextAreaElement } = $props();
 
 	const field = getField();
 </script>
@@ -22,6 +23,7 @@
 	aria-invalid={field?.invalid || undefined}
 	class="o-control {className}"
 	class:o-mono={mono}
+	class:o-bare={bare}
 	{...rest}></textarea>
 
 <style>
@@ -34,4 +36,6 @@
 	.o-control:disabled { background: var(--o-surface-2); border-color: var(--o-border); }
 	.o-control[aria-invalid="true"] { border-color: var(--o-danger); }
 	.o-mono { font-family: var(--o-mono); font-size: 12.5px; }
+	.o-bare, .o-bare:disabled { border-color: transparent; background: transparent; border-radius: 0; padding-inline: 0; min-height: 0; box-shadow: none; }
+	.o-bare:focus { border-color: transparent; border-bottom-color: var(--o-accent); box-shadow: none; }
 </style>

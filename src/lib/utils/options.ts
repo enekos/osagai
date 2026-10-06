@@ -1,8 +1,12 @@
+import type { IconName } from './icons.js';
+
 export interface Option<T = unknown> {
 	value: T;
 	label: string;
 	disabled?: boolean;
 	badge?: string | number;
+	description?: string;
+	icon?: IconName;
 }
 
 export type OptionInput<T = unknown> = T | readonly [T, string] | Option<T>;

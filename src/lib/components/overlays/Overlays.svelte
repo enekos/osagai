@@ -7,6 +7,8 @@
 	import Notice from '../feedback/Notice.svelte';
 	import { dialogs } from '../../state/dialog.svelte.js';
 	import { toast } from '../../state/toast.svelte.js';
+	import { tooltipId, tooltips } from '../../state/tooltip.svelte.js';
+	import { anchor } from '../../actions/anchor.js';
 
 	let typed = $state('');
 	let answer = $state('');
@@ -64,6 +66,10 @@
 	</Modal>
 {/if}
 
+{#if tooltips.current}
+	<div class="o-tooltip" id={tooltipId(tooltips.current.id)} role="tooltip" use:anchor={{ to: tooltips.current.to, side: tooltips.current.side, gap: 6 }}>{tooltips.current.text}</div>
+{/if}
+
 <div class="o-toasts" aria-live="polite">
 	{#each toast.items as t (t.id)}
 		<div class="o-toast o-{t.kind}" role={t.kind === 'error' ? 'alert' : 'status'}>
@@ -77,6 +83,7 @@
 <style>
 	.o-msg { color: var(--o-text-2); margin: 0 0 14px; }
 	form :global(.o-err) { margin-top: 12px; }
+	.o-tooltip { z-index: 110; pointer-events: none; max-width: 280px; padding: 5px 8px; font-size: 12px; font-weight: 500; line-height: 1.35; background: var(--o-ink); color: var(--o-surface); border: var(--o-line) solid var(--o-border-strong); border-radius: var(--o-radius); box-shadow: var(--o-shadow-sm); overflow-wrap: anywhere; }
 	.o-toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 100; max-width: min(420px, calc(100vw - 32px)); }
 	.o-toast { display: flex; align-items: center; gap: 10px; padding: 10px 10px 10px 14px; border-radius: var(--o-radius); background: var(--o-ink); color: var(--o-surface); border: var(--o-line) solid var(--o-border-strong); box-shadow: 4px 4px 0 var(--o-accent); font-size: 13px; font-weight: 500; }
 	.o-ok { box-shadow: 4px 4px 0 var(--o-ok); }

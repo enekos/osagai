@@ -3,6 +3,7 @@ export { default as Badge } from './components/display/Badge.svelte';
 export { default as Button } from './components/actions/Button.svelte';
 export { default as Card } from './components/layout/Card.svelte';
 export { default as Checkbox } from './components/forms/Checkbox.svelte';
+export { default as Choice } from './components/forms/Choice.svelte';
 export { default as Chip } from './components/actions/Chip.svelte';
 export { default as Combobox } from './components/forms/Combobox.svelte';
 export { default as ContextMenu } from './components/actions/ContextMenu.svelte';
@@ -33,6 +34,10 @@ export { default as Tile } from './components/layout/Tile.svelte';
 export { default as Textarea } from './components/forms/Textarea.svelte';
 
 export { anchor, type AnchorOptions, type AnchorTarget } from './actions/anchor.js';
+export { tooltip, type TooltipInput, type TooltipOptions } from './actions/tooltip.js';
+export { tooltips, type TooltipItem } from './state/tooltip.svelte.js';
+export { query, type Query, type QueryOptions } from './state/query.svelte.js';
+export { draft, type Draft, type DraftOptions } from './state/draft.svelte.js';
 export { ListCursor, type CursorOptions } from './state/cursor.svelte.js';
 export { placeBox, type Align, type Box, type PlaceOptions, type Placement, type Side } from './utils/position.js';
 export { confirm, prompt, dialogs, type ConfirmOptions, type PromptOptions } from './state/dialog.svelte.js';

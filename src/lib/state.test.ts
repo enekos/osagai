@@ -2,6 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ListCursor } from './state/cursor.svelte.js';
 import { dialogs, confirm, prompt } from './state/dialog.svelte.js';
 import { task } from './state/task.svelte.js';
+import { query } from './state/query.svelte.js';
+import { draft } from './state/draft.svelte.js';
+import { reactive, withRoot } from './root.test.svelte.js';
+import { flushSync } from 'svelte';
 import { toast } from './state/toast.svelte.js';
 import { errorMessage } from './utils/errors.js';
 import { iconNames, registerIcons } from './utils/icons.js';
@@ -81,6 +85,130 @@ describe('task', () => {
 		await t();
 		expect(toast.items).toEqual([]);
 		expect(seen).toHaveLength(1);
+	});
+});
+
+describe('query', () => {
+	it('loads on creation, exposes pending/loaded/data and reloads', async () => {
+		let n = 0;
+		const r = withRoot(() => query(async () => ++n));
+		try {
+			const q = r.value;
+			flushSync();
+			expect(q.pending).toBe(true);
+			expect(q.loaded).toBe(false);
+			await vi.waitFor(() => expect(q.loaded).toBe(true));
+			expect(q.data).toBe(1);
+			expect(q.pending).toBe(false);
+			expect(await q.reload()).toBe(2);
+			expect(q.data).toBe(2);
+		} finally {
+			r.destroy();
+		}
+	});
+
+	it('keeps errors inline unless asked to toast, and keeps the last data', async () => {
+		let fail = false;
+		const r = withRoot(() => query(async () => { if (fail) throw new Error('nope'); return 'ok'; }));
+		try {
+			const q = r.value;
+			flushSync();
+			await vi.waitFor(() => expect(q.data).toBe('ok'));
+			fail = true;
+			await q.reload();
+			expect((q.error as Error).message).toBe('nope');
+			expect(q.data).toBe('ok');
+			expect(toast.items).toEqual([]);
+		} finally {
+			r.destroy();
+		}
+	});
+
+	it('drops a stale response when a newer load started', async () => {
+		const gates: ((v: string) => void)[] = [];
+		const r = withRoot(() => query(() => new Promise<string>((res) => gates.push(res))));
+		try {
+			const q = r.value;
+			flushSync();
+			const second = q.reload();
+			gates[0]('old');
+			await Promise.resolve();
+			expect(q.data).toBeUndefined();
+			gates[1]('new');
+			expect(await second).toBe('new');
+			expect(q.data).toBe('new');
+		} finally {
+			r.destroy();
+		}
+	});
+
+	it('polls with every and stops when destroyed', async () => {
+		vi.useFakeTimers();
+		let n = 0;
+		const r = withRoot(() => query(async () => ++n, { every: 1000 }));
+		try {
+			flushSync();
+			await vi.advanceTimersByTimeAsync(10);
+			expect(r.value.data).toBe(1);
+			await vi.advanceTimersByTimeAsync(1000);
+			expect(r.value.data).toBe(2);
+			r.destroy();
+			await vi.advanceTimersByTimeAsync(3000);
+			expect(n).toBe(2);
+		} finally {
+			r.destroy();
+			vi.useRealTimers();
+		}
+	});
+});
+
+describe('draft', () => {
+	it('derives dirty from a snapshot and commit clears it', () => {
+		const r = withRoot(() => {
+			const form = reactive({ name: 'a', tags: ['x'] });
+			const d = draft(() => form, { guard: false });
+			return { form, d };
+		});
+		try {
+			const { form, d } = r.value;
+			expect(d.dirty).toBe(false);
+			form.tags.push('y');
+			flushSync();
+			expect(d.dirty).toBe(true);
+			d.commit();
+			flushSync();
+			expect(d.dirty).toBe(false);
+			expect(d.saved).toEqual({ name: 'a', tags: ['x', 'y'] });
+			form.name = 'b';
+			flushSync();
+			expect(d.dirty).toBe(true);
+		} finally {
+			r.destroy();
+		}
+	});
+
+	it('warns before unload only while dirty', () => {
+		const r = withRoot(() => {
+			const form = reactive({ name: 'a' });
+			return { form, d: draft(() => form) };
+		});
+		try {
+			const fire = () => {
+				const e = new Event('beforeunload', { cancelable: true });
+				window.dispatchEvent(e);
+				return e.defaultPrevented;
+			};
+			flushSync();
+			expect(fire()).toBe(false);
+			r.value.form.name = 'b';
+			flushSync();
+			expect(fire()).toBe(true);
+			r.value.d.commit();
+			flushSync();
+			expect(fire()).toBe(false);
+		} finally {
+			r.destroy();
+		}
 	});
 });
 

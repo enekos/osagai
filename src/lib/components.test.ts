@@ -1,7 +1,9 @@
 import { createRawSnippet, flushSync, mount, unmount } from 'svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Button from './components/actions/Button.svelte';
 import Checkbox from './components/forms/Checkbox.svelte';
+import Choice from './components/forms/Choice.svelte';
+import Input from './components/forms/Input.svelte';
 import Combobox from './components/forms/Combobox.svelte';
 import ContextMenu from './components/actions/ContextMenu.svelte';
 import Menu from './components/actions/Menu.svelte';
@@ -10,6 +12,7 @@ import Tabs from './components/forms/Tabs.svelte';
 import Overlays from './components/overlays/Overlays.svelte';
 import { confirm, dialogs } from './state/dialog.svelte.js';
 import { toast } from './state/toast.svelte.js';
+import { tooltips } from './state/tooltip.svelte.js';
 
 let mounted: Record<string, unknown>[] = [];
 function render<P extends Record<string, unknown>>(component: any, props: P) {
@@ -26,6 +29,7 @@ afterEach(() => {
 	mounted = [];
 	document.body.innerHTML = '';
 	toast.clear();
+	tooltips.clear();
 	while (dialogs.current) dialogs.dismiss();
 });
 
@@ -167,5 +171,85 @@ describe('ContextMenu', () => {
 		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
 		flushSync();
 		expect(t.querySelector('[role="menu"]')).toBeNull();
+	});
+});
+
+describe('tooltip', () => {
+	it('shows a Button label after a hover delay, describes the element and hides on Escape', () => {
+		vi.useFakeTimers();
+		try {
+			render(Overlays, {});
+			const t = render(Button, { icon: 'trash', label: 'Delete', title: 'Removes it for good' });
+			const btn = t.querySelector('button')!;
+			expect(btn.getAttribute('title')).toBeNull();
+			btn.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+			expect(document.querySelector('[role="tooltip"]')).toBeNull();
+			vi.advanceTimersByTime(400);
+			flushSync();
+			const tip = document.querySelector<HTMLElement>('[role="tooltip"]')!;
+			expect(tip.textContent).toBe('Removes it for good');
+			expect(tip.style.position).toBe('fixed');
+			expect(btn.getAttribute('aria-describedby')).toBe(tip.id);
+			document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+			flushSync();
+			expect(document.querySelector('[role="tooltip"]')).toBeNull();
+			expect(btn.getAttribute('aria-describedby')).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('ignores touch and does not describe an element whose aria-label is the same text', () => {
+		vi.useFakeTimers();
+		try {
+			render(Overlays, {});
+			const t = render(Button, { icon: 'plus', label: 'Add' });
+			const btn = t.querySelector('button')!;
+			btn.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'touch' }));
+			vi.advanceTimersByTime(1000);
+			flushSync();
+			expect(document.querySelector('[role="tooltip"]')).toBeNull();
+			btn.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+			vi.advanceTimersByTime(400);
+			flushSync();
+			expect(document.querySelector('[role="tooltip"]')?.textContent).toBe('Add');
+			expect(btn.getAttribute('aria-describedby')).toBeNull();
+			btn.dispatchEvent(new PointerEvent('pointerleave'));
+			flushSync();
+			expect(document.querySelector('[role="tooltip"]')).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+});
+
+describe('Choice', () => {
+	it('is a radiogroup of cards: click picks, arrows move and pick, disabled is skipped', () => {
+		const seen: string[] = [];
+		const t = render(Choice, { value: 'a', options: [{ value: 'a', label: 'Ay', description: 'first', icon: 'plus' }, { value: 'b', label: 'Bee', disabled: true }, ['c', 'Sea']], onchange: (v: string) => seen.push(v) });
+		const radios = t.querySelectorAll<HTMLButtonElement>('[role="radio"]');
+		expect(t.querySelector('[role="radiogroup"]')).not.toBeNull();
+		expect(radios).toHaveLength(3);
+		expect(radios[0].getAttribute('aria-checked')).toBe('true');
+		expect(radios[0].tabIndex).toBe(0);
+		expect(radios[2].tabIndex).toBe(-1);
+		expect(radios[0].textContent).toContain('first');
+		key(radios[0], 'ArrowRight');
+		expect(radios[2].getAttribute('aria-checked')).toBe('true');
+		expect(document.activeElement).toBe(radios[2]);
+		radios[1].click();
+		flushSync();
+		expect(radios[2].getAttribute('aria-checked')).toBe('true');
+		radios[0].click();
+		flushSync();
+		expect(radios[0].getAttribute('aria-checked')).toBe('true');
+		expect(seen).toEqual(['c', 'a']);
+	});
+});
+
+describe('Input', () => {
+	it('takes a bare class for inline editing', () => {
+		const t = render(Input, { value: 'x', bare: true });
+		expect(t.querySelector('input')?.classList.contains('o-bare')).toBe(true);
 	});
 });

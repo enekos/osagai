@@ -3,6 +3,7 @@
 	import type { HTMLAnchorAttributes, HTMLButtonAttributes } from 'svelte/elements';
 	import Icon from '../display/Icon.svelte';
 	import Spinner from '../feedback/Spinner.svelte';
+	import { tooltip } from '../../actions/tooltip.js';
 	import type { IconName } from '../../utils/icons.js';
 
 	type Common = {
@@ -12,6 +13,7 @@
 		icon?: IconName;
 		iconRight?: IconName;
 		label?: string;
+		title?: string;
 		loading?: boolean;
 		flat?: boolean;
 		pressed?: boolean;
@@ -28,6 +30,7 @@
 		icon,
 		iconRight,
 		label,
+		title,
 		loading = false,
 		flat = false,
 		pressed,
@@ -41,6 +44,7 @@
 
 	const iconSize = $derived(size === 'sm' ? 14 : 16);
 	const square = $derived(!children && !!(icon || loading));
+	const tip = $derived(title ?? (square ? label : undefined));
 	const classes = $derived(['o-btn', `o-${variant}`, `o-${size}`, danger && 'o-danger', square && 'o-square', flat && 'o-flat', pressed && 'o-pressed', block && 'o-block', wrap && 'o-wrap', className].filter(Boolean).join(' '));
 </script>
 
@@ -51,7 +55,7 @@
 {/snippet}
 
 {#if href !== undefined}
-	<a {...rest as HTMLAnchorAttributes} class={classes} {href} aria-label={square ? label : undefined} title={square ? label : undefined}>{@render inner()}</a>
+	<a {...rest as HTMLAnchorAttributes} class={classes} {href} aria-label={square ? label : undefined} use:tooltip={tip}>{@render inner()}</a>
 {:else}
 	{@const attrs = rest as HTMLButtonAttributes}
 	<button
@@ -62,7 +66,7 @@
 		aria-busy={loading || undefined}
 		aria-pressed={pressed}
 		aria-label={attrs['aria-label'] ?? (square ? label : undefined)}
-		title={attrs.title ?? (square ? label : undefined)}>{@render inner()}</button>
+		use:tooltip={tip}>{@render inner()}</button>
 {/if}
 
 <style>

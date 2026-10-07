@@ -6,7 +6,7 @@
 	let {
 		tone = 'info',
 		title,
-		icon = false,
+		icon = true,
 		children,
 		class: className = '',
 		...rest
@@ -16,7 +16,7 @@
 </script>
 
 <div class="o-notice o-{tone} {className}" role={tone === 'error' ? 'alert' : undefined} {...rest}>
-	{#if icon}<span class="o-glyph"><Icon name={glyph} size={15} /></span>{/if}
+	<span class="o-mark" class:o-bare={!icon} aria-hidden="true">{#if icon}<Icon name={glyph} size={14} />{/if}</span>
 	<div class="o-body">
 		{#if title}<strong class="o-title">{title}</strong>{/if}
 		{@render children?.()}
@@ -24,15 +24,14 @@
 </div>
 
 <style>
-	.o-notice { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: var(--o-radius); font-size: 13px; border: var(--o-line) solid var(--o-border-strong); border-left-width: 6px; background: var(--o-surface); color: var(--o-text); }
-	.o-error { border-color: var(--o-danger); background: var(--o-danger-soft); }
-	.o-ok { border-color: var(--o-ok); background: var(--o-ok-soft); }
-	.o-warn { border-color: var(--o-warn); background: var(--o-warn-soft); }
-	.o-info { border-color: var(--o-accent); background: var(--o-accent-soft); }
-	.o-glyph { display: inline-flex; margin-top: 1px; flex-shrink: 0; }
-	.o-error .o-glyph { color: var(--o-danger); }
-	.o-ok .o-glyph { color: var(--o-ok); }
-	.o-warn .o-glyph { color: var(--o-warn); }
-	.o-body { min-width: 0; flex: 1; }
-	.o-title { display: block; margin-bottom: 2px; }
+	.o-notice { --o-tone: var(--o-accent); display: flex; align-items: stretch; min-width: 0; font-size: 13px; line-height: 1.45; color: var(--o-text); background: var(--o-surface); border: var(--o-line) solid var(--o-border-strong); border-radius: var(--o-radius); overflow: hidden; }
+	.o-error { --o-tone: var(--o-danger); }
+	.o-warn { --o-tone: var(--o-warn); }
+	.o-ok { --o-tone: var(--o-ok); }
+	.o-neutral { --o-tone: var(--o-text-2); }
+	.o-mark { flex: none; display: flex; justify-content: center; align-items: flex-start; width: 30px; padding-top: 10px; background: var(--o-tone); color: var(--o-surface); border-right: var(--o-line) solid var(--o-border-strong); }
+	.o-mark.o-bare { width: 6px; padding: 0; }
+	.o-body { flex: 1; min-width: 0; padding: 9px 12px; overflow-wrap: anywhere; }
+	.o-title { display: block; margin-bottom: 1px; font-weight: 700; }
+	.o-body :global(a) { color: inherit; text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
 </style>

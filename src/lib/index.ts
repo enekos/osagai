@@ -45,4 +45,7 @@ export { errorMessage } from './utils/errors.js';
 export { iconNames, registerIcons, type IconName } from './utils/icons.js';
 export { toOptions, type Option, type OptionInput } from './utils/options.js';
 export { task, type Task, type TaskOptions } from './state/task.svelte.js';
-export { toast, type ToastItem, type ToastKind } from './state/toast.svelte.js';
+export { toast, type ToastAction, type ToastItem, type ToastKind, type ToastOptions } from './state/toast.svelte.js';
+export { shortcuts, keyboardBusy, type ShortcutMap, type ShortcutOptions } from './state/shortcuts.svelte.js';
+export { copy, copied, type CopyOptions } from './state/clipboard.svelte.js';
+export { formatKeys, isMac, matchKeys, parseKeys, type Combo } from './utils/keys.js';

@@ -8,6 +8,9 @@ import { reactive, withRoot } from './root.test.svelte.js';
 import { flushSync } from 'svelte';
 import { toast } from './state/toast.svelte.js';
 import { errorMessage } from './utils/errors.js';
+import { formatKeys, matchKeys, parseKeys } from './utils/keys.js';
+import { shortcuts } from './state/shortcuts.svelte.js';
+import { copied, copy } from './state/clipboard.svelte.js';
 import { iconNames, registerIcons } from './utils/icons.js';
 import { toOptions } from './utils/options.js';
 import { placeBox } from './utils/position.js';
@@ -340,5 +343,160 @@ describe('ListCursor', () => {
 		c.to(4);
 		n = 2;
 		expect(c.index).toBe(1);
+	});
+});
+
+const press = (key: string, init: KeyboardEventInit = {}, target: EventTarget = window) => {
+	const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
+	target.dispatchEvent(e);
+	return e;
+};
+
+describe('keys', () => {
+	it('parses modifiers and aliases', () => {
+		expect(parseKeys('mod+shift+Z')).toEqual({ key: 'z', mod: true, ctrl: false, meta: false, alt: false, shift: true });
+		expect(parseKeys('esc').key).toBe('escape');
+		expect(parseKeys('space').key).toBe(' ');
+	});
+
+	it('reads mod as ⌘ on a Mac and Ctrl elsewhere', () => {
+		const cmdK = new KeyboardEvent('keydown', { key: 'k', metaKey: true });
+		const ctrlK = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true });
+		expect(matchKeys(cmdK, 'mod+k', true)).toBe(true);
+		expect(matchKeys(ctrlK, 'mod+k', true)).toBe(false);
+		expect(matchKeys(ctrlK, 'mod+k', false)).toBe(true);
+		expect(matchKeys(cmdK, 'mod+k', false)).toBe(false);
+	});
+
+	it('needs the exact modifiers, except shift on a symbol', () => {
+		expect(matchKeys(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }), 'k', false)).toBe(false);
+		expect(matchKeys(new KeyboardEvent('keydown', { key: 'K', shiftKey: true }), 'k', false)).toBe(false);
+		expect(matchKeys(new KeyboardEvent('keydown', { key: '?', shiftKey: true }), '?', false)).toBe(true);
+		expect(matchKeys(new KeyboardEvent('keydown', { key: 'Z', shiftKey: true, metaKey: true }), 'mod+shift+z', true)).toBe(true);
+	});
+
+	it('falls back to the physical key when alt changes the character', () => {
+		expect(matchKeys(new KeyboardEvent('keydown', { key: '˚', code: 'KeyK', altKey: true }), 'alt+k', true)).toBe(true);
+	});
+
+	it('formats for the platform', () => {
+		expect(formatKeys('mod+k', true)).toBe('⌘K');
+		expect(formatKeys('mod+shift+z', true)).toBe('⇧⌘Z');
+		expect(formatKeys('mod+k', false)).toBe('Ctrl+K');
+		expect(formatKeys('esc', false)).toBe('Esc');
+		expect(formatKeys('?', false)).toBe('?');
+	});
+});
+
+describe('shortcuts', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('runs the matching handler and prevents the default', () => {
+		const next = vi.fn();
+		const root = withRoot(() => shortcuts({ j: next }));
+		flushSync();
+		const e = press('j');
+		expect(next).toHaveBeenCalledOnce();
+		expect(e.defaultPrevented).toBe(true);
+		root.destroy();
+		press('j');
+		expect(next).toHaveBeenCalledOnce();
+	});
+
+	it('lets a handler decline by returning false', () => {
+		const root = withRoot(() => shortcuts({ j: () => false }));
+		flushSync();
+		expect(press('j').defaultPrevented).toBe(false);
+		root.destroy();
+	});
+
+	it('keeps plain keys out of fields and dialogs, but not modified ones', () => {
+		const plain = vi.fn();
+		const save = vi.fn();
+		const root = withRoot(() => shortcuts({ j: plain, 'ctrl+s': save }));
+		flushSync();
+		document.body.innerHTML = '<input id="f" /><div role="dialog"><button id="b">x</button></div><div contenteditable="true" id="c"></div>';
+		for (const id of ['f', 'b', 'c']) press('j', {}, document.getElementById(id)!);
+		expect(plain).not.toHaveBeenCalled();
+		press('s', { ctrlKey: true }, document.getElementById('f')!);
+		expect(save).toHaveBeenCalledOnce();
+		root.destroy();
+	});
+
+	it('skips events another handler already took, and pauses while disabled', () => {
+		const run = vi.fn();
+		const on = reactive({ value: true });
+		const root = withRoot(() => shortcuts({ j: run }, { enabled: () => on.value }));
+		flushSync();
+		const taken = new KeyboardEvent('keydown', { key: 'j', cancelable: true });
+		taken.preventDefault();
+		window.dispatchEvent(taken);
+		expect(run).not.toHaveBeenCalled();
+		on.value = false;
+		flushSync();
+		press('j');
+		expect(run).not.toHaveBeenCalled();
+		on.value = true;
+		flushSync();
+		press('j');
+		expect(run).toHaveBeenCalledOnce();
+		root.destroy();
+	});
+});
+
+describe('toast actions', () => {
+	it('keeps an action, runs it once and toasts a failure', async () => {
+		const run = vi.fn().mockRejectedValue(new Error('undo failed'));
+		const id = toast.info('Archived', { action: { label: 'Undo', run } });
+		expect(toast.items.at(-1)?.action?.label).toBe('Undo');
+		toast.act(id);
+		toast.act(id);
+		expect(run).toHaveBeenCalledOnce();
+		await Promise.resolve();
+		await Promise.resolve();
+		expect(toast.items.map((t) => [t.kind, t.text])).toEqual([['error', 'undo failed']]);
+	});
+
+	it('still takes a duration as a number', () => {
+		vi.useFakeTimers();
+		toast.push('info', 'brief', 100);
+		vi.advanceTimersByTime(150);
+		expect(toast.items).toEqual([]);
+		vi.useRealTimers();
+	});
+});
+
+describe('copy', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.useRealTimers();
+	});
+
+	it('writes the text, toasts and reports it as copied for a moment', async () => {
+		vi.useFakeTimers();
+		const writeText = vi.fn().mockResolvedValue(undefined);
+		vi.stubGlobal('navigator', { clipboard: { writeText } });
+		expect(await copy('abc', { toast: 'Link copied' })).toBe(true);
+		expect(writeText).toHaveBeenCalledWith('abc');
+		expect(toast.items.at(-1)?.text).toBe('Link copied');
+		expect(copied('abc')).toBe(true);
+		expect(copied('xyz')).toBe(false);
+		expect(copied()).toBe(true);
+		vi.advanceTimersByTime(1600);
+		expect(copied('abc')).toBe(false);
+	});
+
+	it('falls back to a selection copy, and toasts when both fail', async () => {
+		vi.stubGlobal('navigator', {});
+		const exec = vi.fn().mockReturnValue(true);
+		document.execCommand = exec;
+		expect(await copy('fallback', { toast: false })).toBe(true);
+		expect(exec).toHaveBeenCalledWith('copy');
+		expect(toast.items).toEqual([]);
+		exec.mockReturnValue(false);
+		expect(await copy('nope')).toBe(false);
+		expect(toast.items.at(-1)?.kind).toBe('error');
 	});
 });

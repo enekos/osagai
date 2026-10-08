@@ -4,6 +4,7 @@ import Button from './components/actions/Button.svelte';
 import Checkbox from './components/forms/Checkbox.svelte';
 import Choice from './components/forms/Choice.svelte';
 import Input from './components/forms/Input.svelte';
+import Kbd from './components/display/Kbd.svelte';
 import Combobox from './components/forms/Combobox.svelte';
 import ContextMenu from './components/actions/ContextMenu.svelte';
 import Menu from './components/actions/Menu.svelte';
@@ -97,6 +98,18 @@ describe('Overlays', () => {
 		toast.ok('Saved');
 		flushSync();
 		expect(document.querySelector('[role="status"]')?.textContent).toContain('Saved');
+	});
+
+	it('runs a toast action and dismisses the toast', () => {
+		render(Overlays, {});
+		const undo = vi.fn();
+		toast.ok('Deleted', { action: { label: 'Undo', run: undo } });
+		flushSync();
+		const button = [...document.querySelectorAll('button')].find((b) => b.textContent === 'Undo')!;
+		button.click();
+		flushSync();
+		expect(undo).toHaveBeenCalledOnce();
+		expect(document.body.textContent).not.toContain('Deleted');
 	});
 });
 
@@ -251,5 +264,12 @@ describe('Input', () => {
 	it('takes a bare class for inline editing', () => {
 		const t = render(Input, { value: 'x', bare: true });
 		expect(t.querySelector('input')?.classList.contains('o-bare')).toBe(true);
+	});
+});
+
+describe('Kbd', () => {
+	it('formats a key spec', () => {
+		const el = render(Kbd, { keys: 'shift+enter' });
+		expect(el.textContent).toMatch(/^(⇧↵|Shift\+↵)$/);
 	});
 });

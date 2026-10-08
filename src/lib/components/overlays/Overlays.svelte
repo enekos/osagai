@@ -75,6 +75,7 @@
 		<div class="o-toast o-{t.kind}" role={t.kind === 'error' ? 'alert' : 'status'}>
 			<Icon name={t.kind === 'ok' ? 'check' : t.kind === 'error' ? 'alert' : 'info'} />
 			<span>{t.text}</span>
+			{#if t.action}<button type="button" class="o-toast-act" onclick={() => toast.act(t.id)}>{t.action.label}</button>{/if}
 			<button type="button" onclick={() => toast.dismiss(t.id)} aria-label="Dismiss"><Icon name="x" size={14} /></button>
 		</div>
 	{/each}
@@ -91,4 +92,5 @@
 	.o-toast span { flex: 1; overflow-wrap: anywhere; }
 	.o-toast button { width: 26px; height: 26px; display: inline-grid; place-items: center; border: none; background: transparent; color: var(--o-surface); border-radius: var(--o-radius); cursor: pointer; flex-shrink: 0; }
 	.o-toast button:hover { background: var(--o-accent); }
+	.o-toast .o-toast-act { width: auto; padding: 0 8px; font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 </style>

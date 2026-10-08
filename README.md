@@ -1,6 +1,6 @@
 # @enekos/osagai
 
-A small component kit for Svelte 5. It has no dependencies. It covers what an app UI needs every day: buttons, form fields, menus, dialogs, toasts, tables, tabs and page layout. It also has an imperative `confirm()`/`prompt()`, a `task()` helper for writes and a `query()` helper for reads, which together remove most of the `busy`/`try`/`catch`/`toast` boilerplate, and a `draft()` helper that tracks unsaved changes. Every visual decision is a CSS variable, and light and dark themes are built in.
+A small component kit for Svelte 5. It has no dependencies. It covers what an app UI needs every day: buttons, form fields, menus, dialogs, toasts, tables, tabs and page layout. It also has an imperative `confirm()`/`prompt()`, a `task()` helper for writes and a `query()` helper for reads, which together remove most of the `busy`/`try`/`catch`/`toast` boilerplate, a `draft()` helper that tracks unsaved changes, `shortcuts()` for keyboard shortcuts and `copy()` for the clipboard. Every visual decision is a CSS variable, and light and dark themes are built in.
 
 *Osagai* is Basque for "component".
 
@@ -76,7 +76,7 @@ Import the theme once, add the base styles if you want element defaults and util
 | `Card` | a bordered surface | `title`, `description`, `actions` snippet, `padding` none·sm·md, `tone` soft·danger·accent |
 | `Tile` | a card that is a link or a button | `title`, `icon`, `description`, `href` or `onclick`, `dashed`, `accent`, `aside` snippet, children as meta text. The title is a stretched link, so controls in `aside` stay clickable. |
 | `Table` | a styled `<table>` you fill with `thead`/`tbody` | `framed`, `compact`, `sticky`, `maxHeight`, `minWidth`, `scroll`. Cell classes `num`, `mono`, `actions` and `empty`, and row class `dim`, are styled. |
-| `Badge` `Notice` `Empty` `Stat` `Skeleton` `Spinner` `Kbd` `Avatar` `Icon` | display | `tone` on Badge/Notice; `Icon` takes any name from the built-in set or from `registerIcons({ name: 'svg path' })` |
+| `Badge` `Notice` `Empty` `Stat` `Skeleton` `Spinner` `Kbd` `Avatar` `Icon` | display | `tone` on Badge/Notice; `Kbd keys="mod+k"` shows ⌘K on a Mac and Ctrl+K elsewhere; `Icon` takes any name from the built-in set or from `registerIcons({ name: 'svg path' })` |
 
 ## Imperative helpers
 
@@ -90,13 +90,49 @@ await confirm({ title, message, confirmLabel, danger, typeToConfirm, action });
 await prompt({ title: 'Rename', label: 'Name', value: old, required: true }); // string / null
 
 toast.ok('Saved'); toast.info('Queued'); toast.error(err);   // error() takes anything thrown
+toast.ok('Archived', { action: { label: 'Undo', run: () => api.post(`/things/1/restore`) } });
+// the button dismisses the toast, then runs; a throw or rejection becomes an error toast
 
 const save = task(async (id: string) => api.put(id), { success: 'Saved' });
 save('42');            // never throws: errors become a toast and `save.error`
 save.pending;          // reactive, for <Button loading={save.pending}>
 ```
 
-Requests queue up, so two `confirm()` calls show one after the other.
+Requests queue up, so two `confirm()` calls show one after the other. A toast lasts 3.5s, or 6s for an error or one with an action; pass `{ ms }` to change it (`0` keeps it until dismissed). An app that draws its own toasts reads `toast.items` and calls `toast.act(id)` for the action.
+
+### Keyboard: `shortcuts()`
+
+Call it while the component is being set up. It listens on `window` until the component is destroyed.
+
+```ts
+import { shortcuts } from '@enekos/osagai';
+
+shortcuts({
+	'mod+k': () => (palette = !palette),
+	'mod+s': () => d.dirty && save(),
+	j: next,
+	k: prev,
+	'?': () => (help = true)
+});
+```
+
+- `mod` is ⌘ on a Mac and Ctrl elsewhere. `ctrl`, `meta`, `alt` and `shift` mean exactly that key. Modifiers must match: `k` does not fire on Ctrl+K. Shift is ignored for symbols, so write `?`, not `shift+/`. Names: `esc`, `enter`, `space`, `tab`, `up`/`down`/`left`/`right`, `backspace`, `delete`.
+- A key without a modifier is ignored while the focus is in a field, a contenteditable, or an open `Modal`, `Drawer`, `Menu` or listbox: those own the keyboard. A key with a modifier always fires.
+- The handler gets the event and the default is prevented, unless the handler returns `false`. An event another handler already prevented is skipped.
+- `enabled: () => boolean` pauses all of them. `keyboardBusy(target)` is the field-or-overlay test on its own, and `Kbd keys` formats the same strings for a help list.
+
+### Clipboard: `copy()`
+
+```svelte
+<script>
+	import { Button, copy, copied } from '@enekos/osagai';
+</script>
+
+<Button icon={copied(url) ? 'check' : 'copy'} onclick={() => copy(url, { toast: 'Link copied' })}>{copied(url) ? 'Copied' : 'Copy link'}</Button>
+```
+
+- `copy(text, { toast })` resolves to `true` or `false` and never throws. It toasts `Copied` unless `toast` is another text or `false`, and toasts the error if the browser refuses. Without the async clipboard API (an insecure origin) it copies through a hidden selection.
+- `copied(text)` is reactive and true for 1.5s after that text was copied, so a row of copy buttons needs no state of its own. `copied()` is true after any copy.
 
 ### Reads: `query()`
 
@@ -218,9 +254,9 @@ src/lib/
     feedback/   Notice, Empty, Spinner, Skeleton
     display/    Badge, Stat, Avatar, Kbd, Icon
   actions/      anchor, tooltip
-  state/        toast, dialog, tooltip, task, query, draft, cursor (runes, .svelte.ts)
+  state/        toast, dialog, tooltip, task, query, draft, cursor, shortcuts, clipboard (runes, .svelte.ts)
   context/      field and menu context keys
-  utils/        icons, options, errors, position, focus
+  utils/        icons, options, errors, position, focus, keys
   styles/       theme.css, base.css
 ```
 

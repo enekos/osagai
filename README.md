@@ -4,6 +4,12 @@ A small component kit for Svelte 5. It has no dependencies. It covers what an ap
 
 *Osagai* is Basque for "component".
 
+On npm: [@enekos/osagai](https://www.npmjs.com/package/@enekos/osagai).
+
+```sh
+pnpm add @enekos/osagai
+```
+
 ```svelte
 <script lang="ts">
 	import { Button, Field, Input, Modal, Page, confirm, task } from '@enekos/osagai';

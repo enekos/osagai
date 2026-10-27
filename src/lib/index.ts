@@ -7,6 +7,7 @@ export { default as Choice } from './components/forms/Choice.svelte';
 export { default as Chip } from './components/actions/Chip.svelte';
 export { default as Combobox } from './components/forms/Combobox.svelte';
 export { default as ContextMenu } from './components/actions/ContextMenu.svelte';
+export { default as DatePicker } from './components/forms/DatePicker.svelte';
 export { default as Drawer } from './components/overlays/Drawer.svelte';
 export { default as Dropzone } from './components/forms/Dropzone.svelte';
 export { default as Empty } from './components/feedback/Empty.svelte';

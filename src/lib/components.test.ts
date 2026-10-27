@@ -6,6 +6,7 @@ import Choice from './components/forms/Choice.svelte';
 import Input from './components/forms/Input.svelte';
 import Kbd from './components/display/Kbd.svelte';
 import Combobox from './components/forms/Combobox.svelte';
+import DatePicker from './components/forms/DatePicker.svelte';
 import ContextMenu from './components/actions/ContextMenu.svelte';
 import Menu from './components/actions/Menu.svelte';
 import Select from './components/forms/Select.svelte';
@@ -153,6 +154,57 @@ describe('Combobox', () => {
 		key(input, 'Escape');
 		expect(t.querySelector('[role="listbox"]')).toBeNull();
 		expect(input.value).toBe('Spain');
+	});
+});
+
+describe('DatePicker', () => {
+	const focused = () => (document.activeElement as HTMLElement).dataset.date;
+
+	it('opens on the chosen month, moves with the keyboard and picks with Enter', () => {
+		const picked: unknown[] = [];
+		const t = render(DatePicker, { value: '2026-01-31', locale: 'en-GB', name: 'due', onchange: (v: unknown) => picked.push(v) });
+		const trigger = t.querySelector('button')!;
+		expect(trigger.textContent).toContain('31 Jan 2026');
+		trigger.click();
+		flushSync();
+		expect(t.querySelector('[role="dialog"]')?.textContent).toContain('January 2026');
+		expect(focused()).toBe('2026-01-31');
+		key(document.activeElement!, 'ArrowRight');
+		expect(focused()).toBe('2026-02-01');
+		expect(t.querySelector('[role="dialog"]')?.textContent).toContain('February 2026');
+		key(document.activeElement!, 'PageUp');
+		expect(focused()).toBe('2026-01-01');
+		(document.activeElement as HTMLButtonElement).click();
+		flushSync();
+		expect(picked).toEqual(['2026-01-01']);
+		expect(t.querySelector('[role="dialog"]')).toBeNull();
+		expect(document.activeElement).toBe(trigger);
+		expect(t.querySelector<HTMLInputElement>('input[name="due"]')?.value).toBe('2026-01-01');
+	});
+
+	it('keeps the cursor inside min and max, and Escape closes without picking', () => {
+		const picked: unknown[] = [];
+		const t = render(DatePicker, { value: null, min: '2026-03-10', max: '2026-03-20', onchange: (v: unknown) => picked.push(v) });
+		t.querySelector('button')!.click();
+		flushSync();
+		expect(focused()).toBe('2026-03-20');
+		expect(t.querySelector<HTMLButtonElement>('[data-date="2026-03-21"]')?.disabled).toBe(true);
+		key(document.activeElement!, 'ArrowDown');
+		expect(focused()).toBe('2026-03-20');
+		key(document.activeElement!, 'PageUp');
+		expect(focused()).toBe('2026-03-10');
+		key(document.activeElement!, 'Escape');
+		expect(t.querySelector('[role="dialog"]')).toBeNull();
+		expect(picked).toEqual([]);
+	});
+
+	it('starts the week on the given day', () => {
+		const t = render(DatePicker, { value: '2026-10-27', weekStart: 0, locale: 'en-US' });
+		t.querySelector('button')!.click();
+		flushSync();
+		const heads = [...t.querySelectorAll('th')].map((h) => h.textContent);
+		expect(heads[0]).toBe('Sun');
+		expect(t.querySelector('[data-date]')?.getAttribute('data-date')).toBe('2026-09-27');
 	});
 });
 

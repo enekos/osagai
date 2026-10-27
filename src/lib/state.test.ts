@@ -14,6 +14,7 @@ import { copied, copy } from './state/clipboard.svelte.js';
 import { iconNames, registerIcons } from './utils/icons.js';
 import { toOptions } from './utils/options.js';
 import { placeBox } from './utils/position.js';
+import { addDays, addMonths, clampDate, isDate, monthGrid, weekdayNames } from './utils/dates.js';
 
 afterEach(() => {
 	toast.clear();
@@ -262,6 +263,38 @@ describe('icons', () => {
 		registerIcons({ 'my-thing': 'M0 0h1' });
 		expect(iconNames()).toContain('my-thing');
 		expect(iconNames()).toContain('plus');
+	});
+});
+
+describe('dates', () => {
+	it('validates calendar dates', () => {
+		expect(isDate('2024-02-29')).toBe(true);
+		expect(isDate('2025-02-29')).toBe(false);
+		expect(isDate('2025-1-01')).toBe(false);
+		expect(isDate(null)).toBe(false);
+	});
+
+	it('adds days across months and months with a clamped day', () => {
+		expect(addDays('2026-03-28', 3)).toBe('2026-03-31');
+		expect(addDays('2026-01-01', -1)).toBe('2025-12-31');
+		expect(addMonths('2026-01-31', 1)).toBe('2026-02-28');
+		expect(addMonths('2024-03-31', -1)).toBe('2024-02-29');
+		expect(addMonths('2026-05-15', -12)).toBe('2025-05-15');
+	});
+
+	it('clamps into a range', () => {
+		expect(clampDate('2026-01-01', '2026-02-01')).toBe('2026-02-01');
+		expect(clampDate('2026-03-01', null, '2026-02-01')).toBe('2026-02-01');
+		expect(clampDate('2026-01-15', '2026-01-01', '2026-02-01')).toBe('2026-01-15');
+	});
+
+	it('lays out six weeks from the configured week start', () => {
+		const mon = monthGrid('2026-10-27', 1);
+		expect(mon).toHaveLength(42);
+		expect(mon[0]).toBe('2026-09-28');
+		expect(monthGrid('2026-02-10', 0)[0]).toBe('2026-02-01');
+		expect(weekdayNames(1, 'en-GB')[0]).toBe('Mon');
+		expect(weekdayNames(0, 'en-GB')[6]).toBe('Sat');
 	});
 });
 

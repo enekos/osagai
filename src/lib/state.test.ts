@@ -135,10 +135,10 @@ describe('query', () => {
 			const q = r.value;
 			flushSync();
 			const second = q.reload();
-			gates[0]('old');
+			gates[0]!('old');
 			await Promise.resolve();
 			expect(q.data).toBeUndefined();
-			gates[1]('new');
+			gates[1]!('new');
 			expect(await second).toBe('new');
 			expect(q.data).toBe('new');
 		} finally {

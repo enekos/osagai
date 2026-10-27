@@ -1,11 +1,17 @@
 const ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
 const DAY = 86_400_000;
 
-function utc(iso: string): Date | null {
-	const m = ISO.exec(iso);
-	if (!m) return null;
-	const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
-	return d.getUTCDate() === +m[3] && d.getUTCMonth() === +m[2] - 1 ? d : null;
+function utc(date: string): Date | null {
+	const [, y, m, d] = ISO.exec(date)?.map(Number) ?? [];
+	if (y === undefined || m === undefined || d === undefined) return null;
+	const at = new Date(Date.UTC(y, m - 1, d));
+	return at.getUTCDate() === d && at.getUTCMonth() === m - 1 ? at : null;
+}
+
+function parse(date: string): Date {
+	const at = utc(date);
+	if (!at) throw new RangeError(`Not a YYYY-MM-DD date: ${date}`);
+	return at;
 }
 
 function iso(d: Date): string {
@@ -22,11 +28,11 @@ export function today(): string {
 }
 
 export function addDays(date: string, days: number): string {
-	return iso(new Date(utc(date)!.getTime() + days * DAY));
+	return iso(new Date(parse(date).getTime() + days * DAY));
 }
 
 export function addMonths(date: string, months: number): string {
-	const d = utc(date)!;
+	const d = parse(date);
 	const first = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + months, 1));
 	const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
 	first.setUTCDate(Math.min(d.getUTCDate(), last));
@@ -44,7 +50,7 @@ export function clampDate(date: string, min?: string | null, max?: string | null
 }
 
 export function weekday(date: string): number {
-	return utc(date)!.getUTCDay();
+	return parse(date).getUTCDay();
 }
 
 export function monthGrid(date: string, weekStart = 1): string[] {
@@ -55,7 +61,7 @@ export function monthGrid(date: string, weekStart = 1): string[] {
 }
 
 export function formatDate(date: string, options: Intl.DateTimeFormatOptions, locale?: string): string {
-	return new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).format(utc(date)!);
+	return new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).format(parse(date));
 }
 
 export function weekdayNames(weekStart = 1, locale?: string, width: 'narrow' | 'short' | 'long' = 'short'): string[] {

@@ -3,7 +3,7 @@
 	import { getField } from '../../context/field.js';
 
 	let {
-		value = $bindable(),
+		value = $bindable<string | number | null>(),
 		size = 'md',
 		mono = false,
 		bare = false,
@@ -11,7 +11,7 @@
 		element = $bindable(),
 		class: className = '',
 		...rest
-	}: Omit<HTMLInputAttributes, 'size'> & { size?: 'md' | 'sm'; mono?: boolean; bare?: boolean; element?: HTMLInputElement } = $props();
+	}: Omit<HTMLInputAttributes, 'size' | 'value'> & { value?: string | number | null; size?: 'md' | 'sm'; mono?: boolean; bare?: boolean; element?: HTMLInputElement } = $props();
 
 	const field = getField();
 </script>

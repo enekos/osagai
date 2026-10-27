@@ -51,7 +51,7 @@ export function query<T>(fn: () => Promise<T> | T, options: QueryOptions = {}): 
 		if (!options.every) return;
 		timer = setTimeout(() => {
 			if (typeof document !== 'undefined' && document.hidden) schedule();
-			else run(() => untrack(fn));
+			else void run(() => untrack(fn));
 		}, options.every);
 	}
 
@@ -67,7 +67,7 @@ export function query<T>(fn: () => Promise<T> | T, options: QueryOptions = {}): 
 		} catch (e) {
 			p = Promise.reject(e);
 		}
-		untrack(() => run(() => p));
+		void untrack(() => run(() => p));
 		return () => {
 			version++;
 			clearTimeout(timer);

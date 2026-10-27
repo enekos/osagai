@@ -71,8 +71,14 @@
 			close();
 			return;
 		}
-		if (e.key === 'Tab') return close();
-		cursor.keydown(e, (i) => pick(shown[i]));
+		if (e.key === 'Tab') {
+			close();
+			return;
+		}
+		cursor.keydown(e, (i) => {
+			const o = shown[i];
+			if (o) pick(o);
+		});
 	}
 </script>
 
@@ -91,7 +97,7 @@
 		aria-expanded={open}
 		aria-controls={listId}
 		aria-activedescendant={open && cursor.index >= 0 ? `${listId}-${cursor.index}` : undefined}
-		oninput={(e) => {
+		oninput={(e: Event & { currentTarget: HTMLInputElement }) => {
 			query = e.currentTarget.value;
 			open = true;
 			cursor.to(0);
@@ -102,8 +108,8 @@
 	<span class="o-combo-caret" aria-hidden="true"><Icon name="chevron-down" size={14} /></span>
 	{#if open}
 		<div class="o-combo-pop" use:anchor={{ to: input, matchWidth: true, onoutside: close }}>
-			<Listbox items={shown} bind:active={cursor.active} id={listId} onpick={(o) => pick(o)}>
-				{#snippet item(o)}
+			<Listbox items={shown} bind:active={cursor.active} id={listId} onpick={(o: Option<T>) => pick(o)}>
+				{#snippet item(o: Option<T>)}
 					<span class="o-combo-label">{o.label}</span>
 					{#if o === chosen}<Icon name="check" size={13} />{/if}
 				{/snippet}

@@ -12,7 +12,7 @@ export type TooltipInput = TooltipOptions | string | null | undefined | false;
 
 function normalize(input: TooltipInput): Required<TooltipOptions> {
 	const o = typeof input === 'object' && input !== null ? input : { text: input };
-	return { text: o.text || '', side: o.side ?? 'top', delay: o.delay ?? 350 };
+	return { text: o.text ?? '', side: o.side ?? 'top', delay: o.delay ?? 350 };
 }
 
 function keyboardFocused(node: HTMLElement): boolean {

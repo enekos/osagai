@@ -25,19 +25,26 @@
 	"scripts": {
 		"build": "svelte-package -i src/lib -o dist",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
 		"test": "vitest run",
-		"prepublishOnly": "npm run test && npm run build"
+		"prepublishOnly": "npm run lint && npm run check && npm run test && npm run build"
 	},
 	"peerDependencies": {
 		"svelte": "^5.0.0"
 	},
 	"devDependencies": {
+		"@eslint/js": "10.0.1",
 		"@sveltejs/package": "^2.5.0",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
+		"eslint": "10.13.0",
+		"eslint-plugin-svelte": "3.23.1",
+		"globals": "17.13.0",
 		"jsdom": "^30.1.2",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
 		"typescript": "^6.0.3",
+		"typescript-eslint": "8.72.1",
 		"vitest": "^4.0.0"
 	},
 	"keywords": [

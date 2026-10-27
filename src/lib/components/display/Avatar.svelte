@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { HTMLAttributes } from 'svelte/elements';
 	let { name, size = 'md', class: className = '', ...rest }: HTMLAttributes<HTMLSpanElement> & { name: string; size?: 'sm' | 'md' } = $props();
-	const letter = $derived((name.trim()[0] ?? '?').toUpperCase());
+	const letter = $derived((name.trim().charAt(0) || '?').toUpperCase());
 </script>
 
 <span class="o-avatar o-{size} {className}" title={name} aria-hidden="true" {...rest}>{letter}</span>

@@ -71,7 +71,7 @@ export function registerIcons(more: Record<string, string>): void {
 }
 
 export function iconPath(name: string): string {
-	return icons[name] ?? icons.info;
+	return icons[name] ?? builtin.info;
 }
 
 export function iconNames(): string[] {

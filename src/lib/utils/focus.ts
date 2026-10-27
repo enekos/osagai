@@ -7,9 +7,9 @@ export function focusables(container: HTMLElement): HTMLElement[] {
 export function trapTab(e: KeyboardEvent, container: HTMLElement): void {
 	if (e.key !== 'Tab') return;
 	const list = focusables(container);
-	if (!list.length) return;
-	const first = list[0];
-	const last = list[list.length - 1];
+	const first = list.at(0);
+	const last = list.at(-1);
+	if (!first || !last) return;
 	const active = document.activeElement as HTMLElement | null;
 	const atEdge = e.shiftKey ? active === first : active === last;
 	if (atEdge || !active || !container.contains(active)) {

@@ -5,7 +5,7 @@
 	import { setMenu } from '../../context/menu.js';
 	import { anchor } from '../../actions/anchor.js';
 
-	type TriggerProps = { onclick: (e: MouseEvent) => void; 'aria-haspopup': 'menu'; 'aria-expanded': boolean };
+	interface TriggerProps { onclick: (e: MouseEvent) => void; 'aria-haspopup': 'menu'; 'aria-expanded': boolean }
 
 	let {
 		open = $bindable(false),

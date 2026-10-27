@@ -94,7 +94,7 @@
 		}
 		if (!(e.target as HTMLElement).dataset.date) return;
 		const lead = (weekday(view) - weekStart + 7) % 7;
-		const moves: Record<string, () => string> = {
+		const moves: Partial<Record<string, () => string>> = {
 			ArrowLeft: () => addDays(view, -1),
 			ArrowRight: () => addDays(view, 1),
 			ArrowUp: () => addDays(view, -7),
@@ -159,11 +159,11 @@
 			<table class="o-dp-grid" role="grid" aria-labelledby={titleId}>
 				<thead>
 					<tr>
-						{#each heads as h, i}<th scope="col" abbr={fullHeads[i]}>{h}</th>{/each}
+						{#each heads as h, i (h)}<th scope="col" abbr={fullHeads[i]}>{h}</th>{/each}
 					</tr>
 				</thead>
 				<tbody>
-					{#each { length: 6 } as _, row}
+					{#each { length: 6 } as _, row (row)}
 						<tr>
 							{#each days.slice(row * 7, row * 7 + 7) as d (d)}
 								<td role="gridcell" aria-selected={d === chosen}>

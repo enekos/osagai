@@ -37,7 +37,7 @@ export const anchor: Action<HTMLElement, AnchorOptions> = (node, initial) => {
 		opts.onplace?.(p);
 	}
 	function schedule() {
-		if (!frame) frame = requestAnimationFrame(place);
+		frame ||= requestAnimationFrame(place);
 	}
 	function outside(e: PointerEvent) {
 		const t = e.target as Node;

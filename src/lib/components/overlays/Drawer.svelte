@@ -33,7 +33,7 @@
 			if (!panel || panel.contains(document.activeElement)) return;
 			(panel.querySelector<HTMLElement>('[autofocus]') ?? panel).focus();
 		});
-		return () => before?.focus?.();
+		return () => before?.focus();
 	});
 </script>
 

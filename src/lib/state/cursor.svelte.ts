@@ -5,8 +5,8 @@ export interface CursorOptions {
 
 export class ListCursor {
 	active = $state(0);
-	#count: () => number;
-	#opts: CursorOptions;
+	readonly #count: () => number;
+	readonly #opts: CursorOptions;
 
 	constructor(count: () => number, opts: CursorOptions = {}) {
 		this.#count = count;
@@ -18,12 +18,12 @@ export class ListCursor {
 		return n ? Math.min(this.active, n - 1) : -1;
 	}
 
-	to(i: number) {
+	to(i: number): void {
 		const n = this.#count();
 		this.active = n ? Math.max(0, Math.min(i, n - 1)) : 0;
 	}
 
-	move(by: number) {
+	move(by: number): void {
 		const n = this.#count();
 		if (!n) return;
 		const at = Math.max(0, this.index);

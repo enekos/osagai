@@ -26,9 +26,9 @@
 		if (!step) return;
 		e.preventDefault();
 		let j = i;
-		for (let n = 0; n < items.length; n++) {
+		for (const _ of items) {
 			j = (j + step + items.length) % items.length;
-			if (!items[j].disabled) break;
+			if (!items[j]?.disabled) break;
 		}
 		pick(j);
 		root?.querySelectorAll<HTMLElement>('[role="radio"]')[j]?.focus();
@@ -36,7 +36,7 @@
 </script>
 
 <div class="o-choice" role="radiogroup" aria-label={label} bind:this={root} style:grid-template-columns={columns ? `repeat(${columns}, minmax(0, 1fr))` : undefined}>
-	{#each items as o, i}
+	{#each items as o, i (o.value)}
 		<button
 			type="button"
 			role="radio"

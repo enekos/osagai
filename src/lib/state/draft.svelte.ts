@@ -18,7 +18,7 @@ function same(a: unknown, b: unknown): boolean {
 
 export function draft<T>(get: () => T, options: DraftOptions<T> = {}): Draft<T> {
 	const equal = options.equal ?? same;
-	const snapshot = () => $state.snapshot(get()) as T;
+	const snapshot = (): T => $state.snapshot(get()) as T;
 	let saved = $state.raw<T>(untrack(snapshot));
 	const dirty = $derived(!equal(snapshot(), saved));
 

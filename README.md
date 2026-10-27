@@ -273,6 +273,7 @@ src/lib/
 pnpm install
 pnpm test     # vitest: state logic + mounted components (jsdom)
 pnpm check    # svelte-check
+pnpm lint     # eslint: strict + stylistic type-checked TypeScript, Svelte rules
 pnpm build    # svelte-package → dist/
 ```
 

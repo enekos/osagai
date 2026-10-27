@@ -33,7 +33,7 @@
 	class="o-control o-{size} {className}"
 	{...rest}>
 	{#if placeholder !== undefined}<option value={null}>{placeholder}</option>{/if}
-	{#each items as o}<option value={o.value} disabled={o.disabled}>{o.label}</option>{/each}
+	{#each items as o (o.value)}<option value={o.value} disabled={o.disabled}>{o.label}</option>{/each}
 	{@render children?.()}
 </select>
 

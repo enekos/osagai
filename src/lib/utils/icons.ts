@@ -24,6 +24,7 @@ const builtin = {
 	logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
 	chevron: 'M9 6l6 6-6 6',
 	'chevron-down': 'M6 9l6 6 6-6',
+	'chevron-left': 'M15 6l-6 6 6 6',
 	x: 'M18 6L6 18M6 6l12 12',
 	check: 'M20 6L9 17l-5-5',
 	trash: 'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6',
@@ -70,7 +71,7 @@ export function registerIcons(more: Record<string, string>): void {
 }
 
 export function iconPath(name: string): string {
-	return icons[name] ?? icons.info;
+	return icons[name] ?? builtin.info;
 }
 
 export function iconNames(): string[] {

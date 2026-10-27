@@ -6,6 +6,7 @@ import Choice from './components/forms/Choice.svelte';
 import Input from './components/forms/Input.svelte';
 import Kbd from './components/display/Kbd.svelte';
 import Combobox from './components/forms/Combobox.svelte';
+import DatePicker from './components/forms/DatePicker.svelte';
 import ContextMenu from './components/actions/ContextMenu.svelte';
 import Menu from './components/actions/Menu.svelte';
 import Select from './components/forms/Select.svelte';
@@ -15,8 +16,10 @@ import { confirm, dialogs } from './state/dialog.svelte.js';
 import { toast } from './state/toast.svelte.js';
 import { tooltips } from './state/tooltip.svelte.js';
 
+Element.prototype.scrollIntoView = vi.fn();
+
 let mounted: Record<string, unknown>[] = [];
-function render<P extends Record<string, unknown>>(component: any, props: P) {
+function render(component: any, props: Record<string, unknown>) {
 	const target = document.createElement('div');
 	document.body.appendChild(target);
 	const instance = mount(component, { target, props });
@@ -26,7 +29,7 @@ function render<P extends Record<string, unknown>>(component: any, props: P) {
 }
 
 afterEach(() => {
-	for (const m of mounted) unmount(m);
+	for (const m of mounted) void unmount(m);
 	mounted = [];
 	document.body.innerHTML = '';
 	toast.clear();
@@ -73,12 +76,12 @@ describe('Tabs', () => {
 		let picked = '';
 		const t = render(Tabs, { value: 'one', items: [['one', 'One'], { value: 'two', label: 'Two', badge: 3 }], onchange: (v: string) => (picked = v) });
 		const tabs = t.querySelectorAll('[role="tab"]');
-		expect(tabs[0].getAttribute('aria-selected')).toBe('true');
-		expect(tabs[1].textContent).toContain('3');
+		expect(tabs[0]!.getAttribute('aria-selected')).toBe('true');
+		expect(tabs[1]!.textContent).toContain('3');
 		(tabs[1] as HTMLButtonElement).click();
 		flushSync();
 		expect(picked).toBe('two');
-		expect(tabs[1].getAttribute('aria-selected')).toBe('true');
+		expect(tabs[1]!.getAttribute('aria-selected')).toBe('true');
 	});
 });
 
@@ -88,7 +91,7 @@ describe('Overlays', () => {
 		const answer = confirm({ title: 'Delete it?', message: 'Gone for good.', confirmLabel: 'Delete' });
 		flushSync();
 		expect(document.body.textContent).toContain('Delete it?');
-		const ok = [...document.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Delete')!;
+		const ok = [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Delete')!;
 		ok.click();
 		expect(await answer).toBe(true);
 	});
@@ -132,10 +135,10 @@ describe('Combobox', () => {
 		input.value = 'an';
 		input.dispatchEvent(new Event('input', { bubbles: true }));
 		flushSync();
-		const labels = () => [...t.querySelectorAll('[role="option"]')].map((o) => o.textContent?.trim());
+		const labels = () => [...t.querySelectorAll('[role="option"]')].map((o) => o.textContent.trim());
 		expect(labels()).toEqual(['Germany', 'France']);
 		key(input, 'ArrowDown');
-		expect(input.getAttribute('aria-activedescendant')).toBe(t.querySelectorAll('[role="option"]')[1].id);
+		expect(input.getAttribute('aria-activedescendant')).toBe(t.querySelectorAll('[role="option"]')[1]!.id);
 		key(input, 'Enter');
 		expect(picked).toEqual(['fr']);
 		expect(t.querySelector('[role="listbox"]')).toBeNull();
@@ -153,6 +156,57 @@ describe('Combobox', () => {
 		key(input, 'Escape');
 		expect(t.querySelector('[role="listbox"]')).toBeNull();
 		expect(input.value).toBe('Spain');
+	});
+});
+
+describe('DatePicker', () => {
+	const focused = () => (document.activeElement as HTMLElement).dataset.date;
+
+	it('opens on the chosen month, moves with the keyboard and picks with Enter', () => {
+		const picked: unknown[] = [];
+		const t = render(DatePicker, { value: '2026-01-31', locale: 'en-GB', name: 'due', onchange: (v: unknown) => picked.push(v) });
+		const trigger = t.querySelector('button')!;
+		expect(trigger.textContent).toContain('31 Jan 2026');
+		trigger.click();
+		flushSync();
+		expect(t.querySelector('[role="dialog"]')?.textContent).toContain('January 2026');
+		expect(focused()).toBe('2026-01-31');
+		key(document.activeElement!, 'ArrowRight');
+		expect(focused()).toBe('2026-02-01');
+		expect(t.querySelector('[role="dialog"]')?.textContent).toContain('February 2026');
+		key(document.activeElement!, 'PageUp');
+		expect(focused()).toBe('2026-01-01');
+		(document.activeElement as HTMLButtonElement).click();
+		flushSync();
+		expect(picked).toEqual(['2026-01-01']);
+		expect(t.querySelector('[role="dialog"]')).toBeNull();
+		expect(document.activeElement).toBe(trigger);
+		expect(t.querySelector<HTMLInputElement>('input[name="due"]')?.value).toBe('2026-01-01');
+	});
+
+	it('keeps the cursor inside min and max, and Escape closes without picking', () => {
+		const picked: unknown[] = [];
+		const t = render(DatePicker, { value: null, min: '2026-03-10', max: '2026-03-20', onchange: (v: unknown) => picked.push(v) });
+		t.querySelector('button')!.click();
+		flushSync();
+		expect(focused()).toBe('2026-03-20');
+		expect(t.querySelector<HTMLButtonElement>('[data-date="2026-03-21"]')?.disabled).toBe(true);
+		key(document.activeElement!, 'ArrowDown');
+		expect(focused()).toBe('2026-03-20');
+		key(document.activeElement!, 'PageUp');
+		expect(focused()).toBe('2026-03-10');
+		key(document.activeElement!, 'Escape');
+		expect(t.querySelector('[role="dialog"]')).toBeNull();
+		expect(picked).toEqual([]);
+	});
+
+	it('starts the week on the given day', () => {
+		const t = render(DatePicker, { value: '2026-10-27', weekStart: 0, locale: 'en-US' });
+		t.querySelector('button')!.click();
+		flushSync();
+		const heads = [...t.querySelectorAll('th')].map((h) => h.textContent);
+		expect(heads[0]).toBe('Sun');
+		expect(t.querySelector('[data-date]')?.getAttribute('data-date')).toBe('2026-09-27');
 	});
 });
 
@@ -243,19 +297,19 @@ describe('Choice', () => {
 		const radios = t.querySelectorAll<HTMLButtonElement>('[role="radio"]');
 		expect(t.querySelector('[role="radiogroup"]')).not.toBeNull();
 		expect(radios).toHaveLength(3);
-		expect(radios[0].getAttribute('aria-checked')).toBe('true');
-		expect(radios[0].tabIndex).toBe(0);
-		expect(radios[2].tabIndex).toBe(-1);
-		expect(radios[0].textContent).toContain('first');
-		key(radios[0], 'ArrowRight');
-		expect(radios[2].getAttribute('aria-checked')).toBe('true');
+		expect(radios[0]!.getAttribute('aria-checked')).toBe('true');
+		expect(radios[0]!.tabIndex).toBe(0);
+		expect(radios[2]!.tabIndex).toBe(-1);
+		expect(radios[0]!.textContent).toContain('first');
+		key(radios[0]!, 'ArrowRight');
+		expect(radios[2]!.getAttribute('aria-checked')).toBe('true');
 		expect(document.activeElement).toBe(radios[2]);
-		radios[1].click();
+		radios[1]!.click();
 		flushSync();
-		expect(radios[2].getAttribute('aria-checked')).toBe('true');
-		radios[0].click();
+		expect(radios[2]!.getAttribute('aria-checked')).toBe('true');
+		radios[0]!.click();
 		flushSync();
-		expect(radios[0].getAttribute('aria-checked')).toBe('true');
+		expect(radios[0]!.getAttribute('aria-checked')).toBe('true');
 		expect(seen).toEqual(['c', 'a']);
 	});
 });

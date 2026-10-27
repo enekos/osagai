@@ -69,6 +69,7 @@ Import the theme once, add the base styles if you want element defaults and util
 | `Select` | a native select | `options` accepts `['a', 'b']`, `[['a', 'Label A']]` or `[{ value, label, disabled }]`, and values keep their type (`true`, `3`, `null`). Also `placeholder` (a `null` option) and `size`. Children can still be raw `<option>`s. |
 | `Combobox` | a text input that filters a list of options | `bind:value`, `options` (same shapes as `Select`), `placeholder`, `empty` (the no-match text), `size`, `label`, `onchange`. Arrow keys move, Enter picks, Escape closes and keeps the old value. |
 | `Listbox` | the option list behind `Combobox`, for building your own | `items`, `bind:active`, `onpick(item, index)`, an `item(item, { index, active })` snippet, an `empty` snippet, `id`. Each option's id is `` `${id}-${index}` ``, so the input that owns the keyboard can point `aria-activedescendant` at it. Options pick on mousedown, so the input keeps focus. |
+| `DatePicker` | a button that opens a month calendar | `bind:value` (an ISO `YYYY-MM-DD` string or `null`), `min`, `max`, `placeholder`, `size`, `label`, `locale`, `format` (`Intl.DateTimeFormatOptions` for the button text), `weekStart` (0 = Sunday, 1 = Monday, the default), `clearable`, `name` (adds a hidden input for plain forms), `onchange`. Arrow keys move by day and week, Home/End to the week's ends, PageUp/PageDown by month (with Shift by year), Enter picks, Escape closes and refocuses the button. Days outside `min`/`max` are disabled and the cursor never lands on them. Dates are calendar dates, so there is no time zone to get wrong. |
 | `Checkbox` `Switch` `RadioGroup` | choices | `bind:checked` (undefined is fine), `label`, `hint`; `RadioGroup` takes `bind:value` + `options` |
 | `Choice` | a radio group drawn as cards | `bind:value`, `options` (same shapes as `Select`, plus `description` and `icon`), `columns`, `label`, `onchange`. Arrow keys move and pick, disabled options are skipped. |
 | `Tabs` | a segmented control | `bind:value`, `items` (same shapes as `options`, plus `badge`), `size`, `block`, `onchange`. Roving tabindex: arrow keys/Home/End move focus between tabs. |
@@ -254,7 +255,7 @@ The tokens are: surfaces `--o-bg`, `--o-surface`, `--o-surface-2`, `--o-surface-
 src/lib/
   components/
     actions/    Button, Chip, Menu, MenuItem, MenuSeparator, ContextMenu
-    forms/      Field, Input, Textarea, Select, Combobox, Listbox, Checkbox, Switch, RadioGroup, Choice, Tabs, Dropzone
+    forms/      Field, Input, Textarea, Select, Combobox, Listbox, DatePicker, Checkbox, Switch, RadioGroup, Choice, Tabs, Dropzone
     overlays/   Modal, Drawer, Overlays
     layout/     Page, Card, Tile, Table
     feedback/   Notice, Empty, Spinner, Skeleton
@@ -272,6 +273,7 @@ src/lib/
 pnpm install
 pnpm test     # vitest: state logic + mounted components (jsdom)
 pnpm check    # svelte-check
+pnpm lint     # eslint: strict + stylistic type-checked TypeScript, Svelte rules
 pnpm build    # svelte-package → dist/
 ```
 

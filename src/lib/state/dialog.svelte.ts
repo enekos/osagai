@@ -7,7 +7,7 @@ export interface ConfirmOptions {
 	cancelLabel?: string;
 	danger?: boolean;
 	typeToConfirm?: string;
-	action?: () => unknown | Promise<unknown>;
+	action?: () => unknown;
 }
 
 export interface PromptOptions {
@@ -28,7 +28,7 @@ class Dialogs {
 	current = $state<Request | null>(null);
 	busy = $state(false);
 	error = $state<string | null>(null);
-	#queue: Request[] = [];
+	readonly #queue: Request[] = [];
 
 	#enqueue(r: Request) {
 		if (this.current) this.#queue.push(r);

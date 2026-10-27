@@ -48,7 +48,7 @@ class Toaster {
 		this.dismiss(id);
 		if (!action) return;
 		try {
-			Promise.resolve(action.run()).catch((e) => this.error(e));
+			Promise.resolve(action.run()).catch((e: unknown) => this.error(e));
 		} catch (e) {
 			this.error(e);
 		}

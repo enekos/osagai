@@ -25,8 +25,9 @@ function viaSelection(text: string): boolean {
 
 export async function copy(text: string, options: CopyOptions = {}): Promise<boolean> {
 	try {
-		if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
-		await navigator.clipboard.writeText(text);
+		const clipboard = navigator.clipboard as Clipboard | undefined;
+		if (!clipboard) throw new Error('Clipboard unavailable');
+		await clipboard.writeText(text);
 	} catch (e) {
 		if (!viaSelection(text)) {
 			toast.error(e);

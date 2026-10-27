@@ -31,7 +31,7 @@
 	function submit(e: SubmitEvent) {
 		e.preventDefault();
 		if (blocked) return;
-		dialogs.accept(req?.kind === 'prompt' ? answer : undefined);
+		void dialogs.accept(req?.kind === 'prompt' ? answer : undefined);
 	}
 </script>
 

@@ -31,7 +31,7 @@
 </script>
 
 <div class="o-tabs o-{size}" class:o-block={block} role="tablist" aria-label={label} tabindex="-1" bind:this={root} {onkeydown}>
-	{#each options as o}
+	{#each options as o (o.value)}
 		<button type="button" role="tab" tabindex={o.value === value ? 0 : -1} aria-selected={o.value === value} class:o-active={o.value === value} disabled={o.disabled} onclick={() => pick(o.value)}>{o.label}{#if o.badge}<span class="o-count">{o.badge}</span>{/if}</button>
 	{/each}
 </div>

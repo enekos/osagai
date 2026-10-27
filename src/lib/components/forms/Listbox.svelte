@@ -26,12 +26,12 @@
 	let list: HTMLUListElement | undefined = $state();
 
 	$effect(() => {
-		list?.children.item(active)?.scrollIntoView?.({ block: 'nearest' });
+		list?.children.item(active)?.scrollIntoView({ block: 'nearest' });
 	});
 </script>
 
 <ul {id} bind:this={list} class="o-listbox {className}" role="listbox" aria-label={label}>
-	{#each items as it, i}
+	{#each items as it, i (i)}
 		<li
 			id="{id}-{i}"
 			class="o-option"

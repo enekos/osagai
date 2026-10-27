@@ -63,7 +63,7 @@
 		return () => {
 			stack.splice(stack.indexOf(me), 1);
 			if (stack.length === 0) document.body.style.overflow = overflow;
-			before?.focus?.();
+			before?.focus();
 		};
 	});
 </script>

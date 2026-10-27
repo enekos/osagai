@@ -15,7 +15,7 @@
 </script>
 
 <div class="o-radios" class:o-inline={inline} role="radiogroup" aria-label={label}>
-	{#each items as o}
+	{#each items as o (o.value)}
 		<label class="o-radio">
 			<input type="radio" name={group} checked={o.value === value} disabled={o.disabled} onchange={() => (value = o.value)} />
 			<span>{o.label}</span>

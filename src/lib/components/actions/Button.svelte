@@ -6,7 +6,7 @@
 	import { tooltip } from '../../actions/tooltip.js';
 	import type { IconName } from '../../utils/icons.js';
 
-	type Common = {
+	interface Common {
 		variant?: 'default' | 'primary' | 'ai' | 'ghost';
 		danger?: boolean;
 		size?: 'md' | 'sm';
@@ -19,8 +19,9 @@
 		pressed?: boolean;
 		block?: boolean;
 		wrap?: boolean;
+		class?: string;
 		children?: Snippet;
-	};
+	}
 	type Props = Common & ((Omit<HTMLButtonAttributes, 'children'> & { href?: undefined }) | (Omit<HTMLAnchorAttributes, 'children'> & { href: string }));
 
 	let {
@@ -43,7 +44,7 @@
 	}: Props = $props();
 
 	const iconSize = $derived(size === 'sm' ? 14 : 16);
-	const square = $derived(!children && !!(icon || loading));
+	const square = $derived(!children && (!!icon || loading));
 	const tip = $derived(title ?? (square ? label : undefined));
 	const classes = $derived(['o-btn', `o-${variant}`, `o-${size}`, danger && 'o-danger', square && 'o-square', flat && 'o-flat', pressed && 'o-pressed', block && 'o-block', wrap && 'o-wrap', className].filter(Boolean).join(' '));
 </script>

@@ -23,6 +23,11 @@ import QueryError from './components/feedback/QueryError.svelte';
 import DescriptionList from './components/display/DescriptionList.svelte';
 import TopProgress from './components/feedback/TopProgress.svelte';
 import AvatarGroup from './components/display/AvatarGroup.svelte';
+import CommandPalette from './components/overlays/CommandPalette.svelte';
+import Segmented from './components/forms/Segmented.svelte';
+import Progress from './components/display/Progress.svelte';
+import Meter from './components/display/Meter.svelte';
+import StackedBar from './components/display/StackedBar.svelte';
 import { confirm, dialogs } from './state/dialog.svelte.js';
 import { toast } from './state/toast.svelte.js';
 import { tooltips } from './state/tooltip.svelte.js';
@@ -93,6 +98,28 @@ describe('Tabs', () => {
 		flushSync();
 		expect(picked).toBe('two');
 		expect(tabs[1]!.getAttribute('aria-selected')).toBe('true');
+	});
+
+	it('names each tab and points it at the panel it controls', () => {
+		const t = render(Tabs, { value: 'a', items: ['a', 'b'], id: 'views', controls: 'views-panel' });
+		const tabs = t.querySelectorAll('[role="tab"]');
+		expect(tabs[1]!.id).toBe('views-1');
+		expect(tabs[1]!.getAttribute('aria-controls')).toBe('views-panel');
+	});
+});
+
+describe('Segmented', () => {
+	it('is a radiogroup: one tab stop, arrows move and pick, disabled is skipped', () => {
+		let picked = '';
+		const t = render(Segmented, { value: 'day', options: ['day', { value: 'week', label: 'week', disabled: true }, 'month'], label: 'Range', onchange: (v: string) => (picked = v) });
+		const radios = [...t.querySelectorAll<HTMLButtonElement>('[role="radio"]')];
+		expect(t.querySelector('[role="radiogroup"]')?.getAttribute('aria-label')).toBe('Range');
+		expect(radios.map((r) => r.tabIndex)).toEqual([0, -1, -1]);
+		radios[0]!.focus();
+		key(radios[0]!, 'ArrowRight');
+		expect(picked).toBe('month');
+		expect(radios[2]!.getAttribute('aria-checked')).toBe('true');
+		expect(document.activeElement).toBe(radios[2]);
 	});
 });
 
@@ -335,7 +362,8 @@ describe('Input', () => {
 describe('Kbd', () => {
 	it('formats a key spec', () => {
 		const el = render(Kbd, { keys: 'shift+enter' });
-		expect(el.textContent).toMatch(/^(⇧↵|Shift\+↵)$/);
+		expect(el.querySelector('[aria-hidden="true"]')?.textContent).toMatch(/^(⇧↵|Shift\+↵)$/);
+		expect(el.querySelector('.o-spoken')?.textContent).toBe('Shift Enter');
 	});
 });
 
@@ -514,5 +542,101 @@ describe('AvatarGroup', () => {
 		expect(t.querySelectorAll('.o-avatar')).toHaveLength(2);
 		expect(t.querySelector('.o-more')?.textContent).toBe('+3');
 		expect(t.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Ane, Bea, Cai, Dan, Eli');
+	});
+});
+
+const commands = [
+	{ id: 'new', title: 'New project', group: 'Actions', keys: 'mod+n', run: vi.fn() },
+	{ id: 'settings', title: 'Settings', group: 'Go to', href: '/settings', keywords: ['preferences'] },
+	{ id: 'theme', title: 'Toggle theme', group: 'Actions', run: vi.fn() }
+];
+
+describe('CommandPalette', () => {
+	it('opens on its hotkey, groups commands and filters as you type', () => {
+		const t = render(CommandPalette, { commands });
+		expect(t.querySelector('[role="dialog"]')).toBeNull();
+		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', code: 'KeyK', metaKey: navigator.platform.includes('Mac'), ctrlKey: !navigator.platform.includes('Mac'), cancelable: true }));
+		flushSync();
+		expect(t.querySelector('[role="dialog"]')).not.toBeNull();
+		expect([...t.querySelectorAll('.o-palette-group')].map((g) => g.textContent)).toEqual(['Actions', 'Go to']);
+		const input = t.querySelector<HTMLInputElement>('input')!;
+		input.value = 'pref';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		flushSync();
+		expect([...t.querySelectorAll('[role="option"]')].map((o) => o.textContent.trim())).toEqual(['Settings']);
+		expect(input.getAttribute('aria-activedescendant')).toBe(t.querySelector('[role="option"]')!.id);
+	});
+
+	it('runs the active command with Enter and closes', () => {
+		const run = vi.fn();
+		const onselect = vi.fn();
+		const t = render(CommandPalette, { open: true, onselect, commands: [{ id: 'a', title: 'Alpha', run: vi.fn() }, { id: 'b', title: 'Beta', run }] });
+		const input = t.querySelector<HTMLInputElement>('input')!;
+		key(input, 'ArrowDown');
+		key(input, 'Enter');
+		expect(run).toHaveBeenCalledOnce();
+		expect(onselect).toHaveBeenCalledWith(expect.objectContaining({ id: 'b' }));
+		expect(t.querySelector('[role="dialog"]')).toBeNull();
+	});
+
+	it('follows an href through a real anchor click', () => {
+		const clicked = vi.fn((e: Event) => e.preventDefault());
+		document.addEventListener('click', clicked);
+		try {
+			const t = render(CommandPalette, { open: true, commands: [{ id: 's', title: 'Settings', href: '/settings' }] });
+			key(t.querySelector('input')!, 'Enter');
+			expect((clicked.mock.calls[0]![0].target as HTMLAnchorElement).getAttribute('href')).toBe('/settings');
+		} finally {
+			document.removeEventListener('click', clicked);
+		}
+	});
+
+	it('offers to ask with the query when given ask, and says when nothing matches otherwise', () => {
+		const ask = vi.fn();
+		const t = render(CommandPalette, { open: true, commands, ask: { label: 'Ask AI', run: ask } });
+		const input = t.querySelector<HTMLInputElement>('input')!;
+		input.value = 'zzz';
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+		flushSync();
+		expect(t.querySelector('[role="option"]')?.textContent).toContain('zzz');
+		key(input, 'Enter');
+		expect(ask).toHaveBeenCalledWith('zzz');
+		const bare = render(CommandPalette, { open: true, commands });
+		const i2 = bare.querySelector<HTMLInputElement>('input')!;
+		i2.value = 'zzz';
+		i2.dispatchEvent(new Event('input', { bubbles: true }));
+		flushSync();
+		expect(bare.querySelector('.o-palette-empty')?.textContent).toBe('Nothing matches.');
+	});
+});
+
+describe('Progress', () => {
+	it('reports its value, and drops it when indeterminate', () => {
+		const t = render(Progress, { value: 30, max: 60, label: 'Upload', showValue: true });
+		const bar = t.querySelector('[role="progressbar"]')!;
+		expect(bar.getAttribute('aria-valuenow')).toBe('30');
+		expect(bar.getAttribute('aria-valuetext')).toBe('50%');
+		const ind = render(Progress, { label: 'Loading', shape: 'ring' }).querySelector('[role="progressbar"]')!;
+		expect(ind.hasAttribute('aria-valuenow')).toBe(false);
+		expect(ind.classList.contains('o-indeterminate')).toBe(true);
+	});
+});
+
+describe('Meter', () => {
+	it('picks its tone like <meter> from low, high and optimum', () => {
+		const tone = (value: number, optimum: number) => render(Meter, { value, low: 30, high: 70, optimum, label: 'Load' }).querySelector('[role="meter"]')!.className;
+		expect(tone(50, 50)).toContain('o-ok');
+		expect(tone(90, 50)).toContain('o-warn');
+		expect(tone(90, 10)).toContain('o-danger');
+		expect(tone(10, 10)).toContain('o-ok');
+	});
+});
+
+describe('StackedBar', () => {
+	it('sizes segments against the total and summarises them for a screen reader', () => {
+		const t = render(StackedBar, { label: 'Leave', total: 30, segments: [{ label: 'Taken', value: 12 }, { label: 'Planned', value: 3 }] });
+		const segs = [...t.querySelectorAll<HTMLElement>('.o-seg')];
+		expect(segs.map((s) => s.style.width)).toEqual(['40%', '10%']);
+		expect(t.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Leave: Taken 12, Planned 3');
 	});
 });

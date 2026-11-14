@@ -86,6 +86,15 @@ Import the theme once, add the base styles if you want element defaults and util
 | `Breadcrumbs` | a path trail | `items` (`{ label, href? }[]`), `separator` (default `/`), `mono`, `label` (the nav's `aria-label`), a `root` snippet drawn before the first item. Every crumb except the last is a link, and the last gets `aria-current="page"`. It uses margins instead of flex `gap`, so it lays out on old Safari too. |
 | `CodeView` | line-numbered code | `text` (plain, escaped for you) or `lines` (one already-escaped HTML string per line, from a highlighter), `start`, `numbers`, `wrap` (soft wrap, on by default), `anchor` (line id prefix, `L` by default, so `#L12` links and highlights a line; `''` for none). Spans with class `c`, `s` and `k` are set as comment (italic), string (softer) and keyword (bold), which still reads in greyscale. The whole file is one `{@html}` write. |
 | `Prose` | typography for rendered markdown | `html` (trusted, already sanitised) or children, `serif` (a book face for long reads), `size` sm·md·lg. It styles headings, lists, quotes, tables, code blocks, images and `details`, and fades in heading `.anchor` links on hover. |
+| `Popover` | a small dialog anchored to a trigger, for a filter panel or an inline form | `bind:open`, `title` (its `aria-label` and a header), `side` bottom·top, `align` start·end, `width`; the default trigger takes `text`/`icon`/`label`/`variant`/`size` like `Menu`, or pass a `trigger(props)` snippet. `children` gets `{ close }`. It focuses its first field, traps Tab, closes on Escape (refocusing the trigger) and on a click outside. |
+| `Collapsible` | a disclosure: a header button that shows and hides a region | `bind:open`, `title` (string or snippet), `hint` (right-aligned meta text), `disabled`, `ontoggle`, an `aside` snippet for controls beside the header. The region animates its height and is `inert` while closed. |
+| `Accordion` | a stack of `Collapsible`s | `multiple` (default: one open at a time), `framed` (default: bordered, with dividers). Up/Down/Home/End move between headers. A child's `open` sets the initial state. |
+| `SelectionBar` | a floating toolbar for bulk actions on a selection | `count` (hidden at 0), `onclear`, `noun` (`['row', 'rows']`), `hint`, `label`; children are the actions. Escape clears unless focus is in a field or an overlay, and the count is announced politely. |
+| `QueryError` | a load error with a Retry button | `query` (shows `query.error`, retries with `query.reload()`), or `error` + `onretry`; `title`, `compact`. Renders nothing while there is no error, so it can sit next to the content. |
+| `DescriptionList` | key/value rows (`<dl>`) | `items` (`{ term, value, hint?, mono?, key? }[]`), `layout` inline·stacked, `termWidth`, `empty` (default `—` for a null or empty value), a `value(item)` snippet for custom cells. Inline rows stack on phones. |
+| `TopProgress` | a thin bar at the top of the viewport while something loads | `active`, `delay` (150ms, so a quick navigation never flashes). With SvelteKit: `<TopProgress active={!!navigating.to} />`. |
+| `AvatarGroup` | overlapping avatars | `names`, `max` (4; the last slot becomes `+N` with the rest in its title), `size`, `label`. |
+| `SplitView` | a main column with a side column | an `aside` snippet, `placement` end·start, `asideWidth` (320px), `gap` (24px), `sticky`. It becomes one column at phone width, with the aside after the main content. |
 | `Badge` `Notice` `Empty` `Stat` `Skeleton` `Spinner` `Kbd` `Avatar` `Icon` | display | `tone` on Badge/Notice; `Kbd keys="mod+k"` shows ⌘K on a Mac and Ctrl+K elsewhere; `Icon` takes any name from the built-in set or from `registerIcons({ name: 'svg path' })` |
 
 ## Imperative helpers
@@ -211,7 +220,7 @@ It opens after a short hover (350ms) or on keyboard focus, flips to the side wit
 
 ## Anchored panels
 
-`Menu`, `ContextMenu` and `Combobox` place their panels with one action that you can use too:
+`Menu`, `ContextMenu`, `Popover` and `Combobox` place their panels with one action that you can use too:
 
 ```svelte
 <script>
@@ -250,23 +259,23 @@ Override any `--o-*` variable on `:root`, or on any element if you want to scope
 }
 ```
 
-The tokens are: surfaces `--o-bg`, `--o-surface`, `--o-surface-2`, `--o-surface-3`; lines `--o-border`, `--o-border-strong`, `--o-line`; text `--o-text`, `--o-text-2`, `--o-text-3`, `--o-ink`; accents `--o-accent*`, `--o-mark*`, `--o-ok*`, `--o-warn*`, `--o-danger*`; shape `--o-radius`, `--o-radius-lg`, `--o-shadow*`, `--o-control-h`, `--o-control-h-sm`; a ten-colour chart palette `--o-c1`…`--o-c10`.
+The tokens are: surfaces `--o-bg`, `--o-surface`, `--o-surface-2`, `--o-surface-3`; lines `--o-border`, `--o-border-strong`, `--o-line`; text `--o-text`, `--o-text-2`, `--o-text-3`, `--o-ink`; accents `--o-accent*`, `--o-mark*`, `--o-ok*`, `--o-warn*`, `--o-danger*`; shape `--o-radius`, `--o-radius-lg`, `--o-shadow*`, `--o-control-h`, `--o-control-h-sm`; motion `--o-duration-fast` (80ms), `--o-duration` (150ms), `--o-duration-slow` (250ms), `--o-ease-out` and `--o-ease-spring` (a `linear()` spring that overshoots a little); a ten-colour chart palette `--o-c1`…`--o-c10`.
 
 ## Layout of the source
 
 ```
 src/lib/
   components/
-    actions/    Button, Chip, Menu, MenuItem, MenuSeparator, ContextMenu
+    actions/    Button, Chip, Menu, MenuItem, MenuSeparator, ContextMenu, SelectionBar
     forms/      Field, Input, Textarea, Select, Combobox, Listbox, DatePicker, Checkbox, Switch, RadioGroup, Choice, Tabs, Dropzone
-    overlays/   Modal, Drawer, Overlays
-    layout/     Page, Card, Tile, Table
-    feedback/   Notice, Empty, Spinner, Skeleton
-    display/    Badge, Stat, Avatar, Kbd, Icon, CodeView, Prose
+    overlays/   Modal, Drawer, Popover, Overlays
+    layout/     Page, Card, Tile, Table, SplitView, Collapsible, Accordion
+    feedback/   Notice, Empty, Spinner, Skeleton, QueryError, TopProgress
+    display/    Badge, Stat, Avatar, AvatarGroup, Kbd, Icon, CodeView, Prose, DescriptionList
     navigation/ Breadcrumbs
   actions/      anchor, tooltip
   state/        toast, dialog, tooltip, task, query, draft, cursor, shortcuts, clipboard (runes, .svelte.ts)
-  context/      field and menu context keys
+  context/      field, menu and accordion context keys
   utils/        icons, options, errors, position, focus, keys
   styles/       theme.css, base.css
 ```

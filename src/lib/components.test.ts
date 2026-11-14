@@ -15,6 +15,14 @@ import Menu from './components/actions/Menu.svelte';
 import Select from './components/forms/Select.svelte';
 import Tabs from './components/forms/Tabs.svelte';
 import Overlays from './components/overlays/Overlays.svelte';
+import Popover from './components/overlays/Popover.svelte';
+import Collapsible from './components/layout/Collapsible.svelte';
+import AccordionFixture from './accordion.test.svelte';
+import SelectionBar from './components/actions/SelectionBar.svelte';
+import QueryError from './components/feedback/QueryError.svelte';
+import DescriptionList from './components/display/DescriptionList.svelte';
+import TopProgress from './components/feedback/TopProgress.svelte';
+import AvatarGroup from './components/display/AvatarGroup.svelte';
 import { confirm, dialogs } from './state/dialog.svelte.js';
 import { toast } from './state/toast.svelte.js';
 import { tooltips } from './state/tooltip.svelte.js';
@@ -366,5 +374,145 @@ describe('Prose', () => {
 	it('renders trusted HTML', () => {
 		const t = render(Prose, { html: '<h2>Hi</h2><p>there</p>', serif: true });
 		expect(t.querySelector('.o-prose.o-serif h2')?.textContent).toBe('Hi');
+	});
+});
+
+const popoverBody = createRawSnippet(() => ({ render: () => '<div><input aria-label="Name" /><button>Apply</button></div>' }));
+const text = (t: string) => createRawSnippet(() => ({ render: () => `<span>${t}</span>` }));
+
+describe('Popover', () => {
+	it('opens a labelled dialog, focuses its first field, and Escape closes it and refocuses the trigger', () => {
+		const t = render(Popover, { text: 'Filter', title: 'Filters', children: popoverBody });
+		const trigger = t.querySelector<HTMLButtonElement>('[aria-haspopup="dialog"]')!;
+		expect(trigger.getAttribute('aria-expanded')).toBe('false');
+		trigger.click();
+		flushSync();
+		const panel = t.querySelector<HTMLElement>('[role="dialog"]')!;
+		expect(panel.style.position).toBe('fixed');
+		expect(panel.getAttribute('aria-label')).toBe('Filters');
+		expect(trigger.getAttribute('aria-controls')).toBe(panel.id);
+		expect(trigger.getAttribute('aria-expanded')).toBe('true');
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('Name');
+		key(panel.querySelector('input')!, 'Escape');
+		expect(t.querySelector('[role="dialog"]')).toBeNull();
+		expect(document.activeElement).toBe(trigger);
+	});
+
+	it('closes on a pointer down outside', () => {
+		const t = render(Popover, { text: 'Filter', open: true, children: popoverBody });
+		pointerdown(t.querySelector('input')!);
+		expect(t.querySelector('[role="dialog"]')).not.toBeNull();
+		pointerdown(document.body);
+		expect(t.querySelector('[role="dialog"]')).toBeNull();
+	});
+});
+
+describe('Collapsible', () => {
+	it('toggles its region and keeps a closed one inert', () => {
+		const ontoggle = vi.fn();
+		const t = render(Collapsible, { title: 'Details', ontoggle, children: text('Body') });
+		const head = t.querySelector<HTMLButtonElement>('button')!;
+		const panel = t.querySelector<HTMLElement>('[role="region"]')!;
+		expect(head.getAttribute('aria-expanded')).toBe('false');
+		expect(head.getAttribute('aria-controls')).toBe(panel.id);
+		expect(panel.inert).toBe(true);
+		head.click();
+		flushSync();
+		expect(head.getAttribute('aria-expanded')).toBe('true');
+		expect(panel.inert).toBe(false);
+		expect(ontoggle).toHaveBeenCalledWith(true);
+	});
+});
+
+describe('Accordion', () => {
+	const expanded = (t: HTMLElement) => [...t.querySelectorAll('.o-collapsible-head')].map((b) => b.getAttribute('aria-expanded'));
+
+	it('keeps one section open at a time and moves between headers with the arrows', () => {
+		const t = render(AccordionFixture, {});
+		expect(expanded(t)).toEqual(['true', 'false', 'false']);
+		const heads = t.querySelectorAll<HTMLButtonElement>('.o-collapsible-head');
+		heads[1]!.click();
+		flushSync();
+		expect(expanded(t)).toEqual(['false', 'true', 'false']);
+		heads[1]!.focus();
+		key(heads[1]!, 'ArrowDown');
+		expect(document.activeElement).toBe(heads[2]);
+		key(heads[2]!, 'ArrowDown');
+		expect(document.activeElement).toBe(heads[0]);
+	});
+
+	it('lets several stay open with multiple', () => {
+		const t = render(AccordionFixture, { multiple: true });
+		t.querySelectorAll<HTMLButtonElement>('.o-collapsible-head')[2]!.click();
+		flushSync();
+		expect(expanded(t)).toEqual(['true', 'false', 'true']);
+	});
+});
+
+describe('SelectionBar', () => {
+	it('announces the count, hides at zero and clears on Escape', () => {
+		const onclear = vi.fn();
+		const t = render(SelectionBar, { count: 3, onclear, noun: ['row', 'rows'] });
+		expect(t.querySelector('[role="toolbar"]')?.textContent).toContain('3 rows selected');
+		expect(t.querySelector('[aria-live]')?.textContent).toBe('3 rows selected');
+		key(document.body, 'Escape');
+		expect(onclear).toHaveBeenCalledOnce();
+		const none = render(SelectionBar, { count: 0, onclear });
+		expect(none.querySelector('[role="toolbar"]')).toBeNull();
+		key(document.body, 'Escape');
+		expect(onclear).toHaveBeenCalledTimes(2);
+	});
+
+	it('leaves Escape alone inside a field', () => {
+		const onclear = vi.fn();
+		render(SelectionBar, { count: 1, onclear });
+		const input = document.createElement('input');
+		document.body.appendChild(input);
+		key(input, 'Escape');
+		expect(onclear).not.toHaveBeenCalled();
+	});
+});
+
+describe('QueryError', () => {
+	it('renders nothing without an error, and the message with a working retry', async () => {
+		expect(render(QueryError, {}).querySelector('[role="alert"]')).toBeNull();
+		const onretry = vi.fn();
+		const t = render(QueryError, { error: new Error('Timed out'), onretry });
+		expect(t.querySelector('[role="alert"]')?.textContent).toContain('Timed out');
+		t.querySelector('button')!.click();
+		await Promise.resolve();
+		expect(onretry).toHaveBeenCalledOnce();
+	});
+});
+
+describe('DescriptionList', () => {
+	it('pairs terms with values and shows a dash for an empty one', () => {
+		const t = render(DescriptionList, { items: [{ term: 'Owner', value: 'Ane' }, { term: 'Due', value: null }] });
+		expect([...t.querySelectorAll('dt')].map((d) => d.textContent)).toEqual(['Owner', 'Due']);
+		expect([...t.querySelectorAll('dd')].map((d) => d.textContent.trim())).toEqual(['Ane', '—']);
+	});
+});
+
+describe('TopProgress', () => {
+	it('waits out the delay so a fast navigation never flashes', () => {
+		vi.useFakeTimers();
+		try {
+			const t = render(TopProgress, { active: true, delay: 100 });
+			expect(t.querySelector('.o-top-progress')).toBeNull();
+			vi.advanceTimersByTime(100);
+			flushSync();
+			expect(t.querySelector('.o-top-progress')).not.toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+});
+
+describe('AvatarGroup', () => {
+	it('shows up to max and folds the rest into a count', () => {
+		const t = render(AvatarGroup, { names: ['Ane', 'Bea', 'Cai', 'Dan', 'Eli'], max: 3 });
+		expect(t.querySelectorAll('.o-avatar')).toHaveLength(2);
+		expect(t.querySelector('.o-more')?.textContent).toBe('+3');
+		expect(t.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Ane, Bea, Cai, Dan, Eli');
 	});
 });

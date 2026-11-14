@@ -8,7 +8,7 @@ import { reactive, withRoot } from './root.test.svelte.js';
 import { flushSync } from 'svelte';
 import { toast } from './state/toast.svelte.js';
 import { errorMessage } from './utils/errors.js';
-import { formatKeys, matchKeys, parseKeys } from './utils/keys.js';
+import { formatKeys, matchKeys, parseKeys, spokenKeys } from './utils/keys.js';
 import { shortcuts } from './state/shortcuts.svelte.js';
 import { copied, copy } from './state/clipboard.svelte.js';
 import { iconNames, registerIcons } from './utils/icons.js';
@@ -418,6 +418,9 @@ describe('keys', () => {
 		expect(formatKeys('mod+k', false)).toBe('Ctrl+K');
 		expect(formatKeys('esc', false)).toBe('Esc');
 		expect(formatKeys('?', false)).toBe('?');
+		expect(spokenKeys('mod+k', true)).toBe('Command K');
+		expect(spokenKeys('mod+shift+z', false)).toBe('Shift Control Z');
+		expect(spokenKeys('esc', false)).toBe('Escape');
 	});
 });
 

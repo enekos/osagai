@@ -72,7 +72,8 @@ Import the theme once, add the base styles if you want element defaults and util
 | `DatePicker` | a button that opens a month calendar | `bind:value` (an ISO `YYYY-MM-DD` string or `null`), `min`, `max`, `placeholder`, `size`, `label`, `locale`, `format` (`Intl.DateTimeFormatOptions` for the button text), `weekStart` (0 = Sunday, 1 = Monday, the default), `clearable`, `name` (adds a hidden input for plain forms), `onchange`. Arrow keys move by day and week, Home/End to the week's ends, PageUp/PageDown by month (with Shift by year), Enter picks, Escape closes and refocuses the button. Days outside `min`/`max` are disabled and the cursor never lands on them. Dates are calendar dates, so there is no time zone to get wrong. |
 | `Checkbox` `Switch` `RadioGroup` | choices | `bind:checked` (undefined is fine), `label`, `hint`; `RadioGroup` takes `bind:value` + `options` |
 | `Choice` | a radio group drawn as cards | `bind:value`, `options` (same shapes as `Select`, plus `description` and `icon`), `columns`, `label`, `onchange`. Arrow keys move and pick, disabled options are skipped. |
-| `Tabs` | a segmented control | `bind:value`, `items` (same shapes as `options`, plus `badge`), `size`, `block`, `onchange`. Roving tabindex: arrow keys/Home/End move focus between tabs. |
+| `Tabs` | tabs that switch what a panel shows | `bind:value`, `items` (same shapes as `options`, plus `badge`), `size`, `block`, `onchange`, `id` (each tab is `` `${id}-${index}` ``), `controls` (the panel's id, set as every tab's `aria-controls`; give the panel `role="tabpanel"` and `aria-labelledby` the active tab). Roving tabindex: arrow keys/Home/End move focus between tabs. |
+| `Segmented` | a segmented control that picks a value | `bind:value`, `options` (same shapes as `Select`, plus `icon`), `label`, `size`, `block`, `disabled`, `onchange`. It is a `radiogroup`, not tabs: use it for a filter or a view mode, and `Tabs` when the choice swaps a panel. One tab stop; arrow keys move and pick, disabled options are skipped. |
 | `Dropzone` | file drop + click to choose | `onfiles(files)`, `accept`, `multiple`, `busy`, `title`, `hint` |
 | `Chip` | a small toggle or insert button | `selected`, `mono` |
 | `Menu` `MenuItem` `MenuSeparator` | a dropdown that owns its open state | `icon`/`text`/`label` for the default trigger, or a `trigger(props)` snippet to spread on your own button. Arrow keys, Escape and click-outside all work. Items take `icon`, `danger`, `checked`, `href`, `hint`, and close the menu when clicked. |
@@ -95,7 +96,11 @@ Import the theme once, add the base styles if you want element defaults and util
 | `TopProgress` | a thin bar at the top of the viewport while something loads | `active`, `delay` (150ms, so a quick navigation never flashes). With SvelteKit: `<TopProgress active={!!navigating.to} />`. |
 | `AvatarGroup` | overlapping avatars | `names`, `max` (4; the last slot becomes `+N` with the rest in its title), `size`, `label`. |
 | `SplitView` | a main column with a side column | an `aside` snippet, `placement` end·start, `asideWidth` (320px), `gap` (24px), `sticky`. It becomes one column at phone width, with the aside after the main content. |
-| `Badge` `Notice` `Empty` `Stat` `Skeleton` `Spinner` `Kbd` `Avatar` `Icon` | display | `tone` on Badge/Notice; `Kbd keys="mod+k"` shows ⌘K on a Mac and Ctrl+K elsewhere; `Icon` takes any name from the built-in set or from `registerIcons({ name: 'svg path' })` |
+| `CommandPalette` | a ⌘K launcher | `commands` (`{ id, title, group?, subtitle?, icon?, keywords?, keys?, href?, run? }[]`), `bind:open`, `hotkey` (`mod+k`; `null` to open it yourself), `placeholder`, `empty`, `label`, `ask` (`{ label, run(query) }` adds an "Ask" row for free text), `onselect`. Groups keep their first-seen order; typing ranks a title prefix over a word start over a substring over a keyword over a subsequence (`scoreCommand` is exported). Arrows move, Enter runs, Escape closes and restores focus. An `href` is followed with a real anchor click, so SvelteKit routes it client-side. |
+| `Progress` | a progress bar or ring | `value` (`null` = indeterminate), `max`, `label` (required: its accessible name), `shape` bar·ring, `size` sm·md·lg, `tone` accent·ok·warn·danger·ink, `showValue`. |
+| `Meter` | a gauge for a value in a known range | `value`, `min`, `max`, `label`, `shape`, `size`, `showValue`, `valueText`, `target` (a marker on the bar). With `low`/`high`/`optimum` it picks its tone like `<meter>`: ok in the optimum's region, warn one region away, danger two away. `tone` overrides. |
+| `StackedBar` | parts of a whole on one bar | `segments` (`{ label, value, color? }[]`, colours default to `--o-c1`…), `total` (defaults to the sum, so a gap shows what is left), `label`, `legend`, `format`, `size`. Screen readers get one summary: "Leave: Taken 12, Planned 3". |
+| `Badge` `Notice` `Empty` `Stat` `Skeleton` `Spinner` `Kbd` `Avatar` `Icon` | display | `tone` on Badge/Notice; `Kbd keys="mod+k"` shows ⌘K on a Mac and Ctrl+K elsewhere, and screen readers hear "Command K" / "Control K" (`spokenKeys`); `Icon` takes any name from the built-in set or from `registerIcons({ name: 'svg path' })` |
 
 ## Imperative helpers
 
@@ -267,11 +272,11 @@ The tokens are: surfaces `--o-bg`, `--o-surface`, `--o-surface-2`, `--o-surface-
 src/lib/
   components/
     actions/    Button, Chip, Menu, MenuItem, MenuSeparator, ContextMenu, SelectionBar
-    forms/      Field, Input, Textarea, Select, Combobox, Listbox, DatePicker, Checkbox, Switch, RadioGroup, Choice, Tabs, Dropzone
-    overlays/   Modal, Drawer, Popover, Overlays
+    forms/      Field, Input, Textarea, Select, Combobox, Listbox, DatePicker, Checkbox, Switch, RadioGroup, Choice, Tabs, Segmented, Dropzone
+    overlays/   Modal, Drawer, Popover, CommandPalette, Overlays
     layout/     Page, Card, Tile, Table, SplitView, Collapsible, Accordion
     feedback/   Notice, Empty, Spinner, Skeleton, QueryError, TopProgress
-    display/    Badge, Stat, Avatar, AvatarGroup, Kbd, Icon, CodeView, Prose, DescriptionList
+    display/    Badge, Stat, Avatar, AvatarGroup, Kbd, Icon, CodeView, Prose, DescriptionList, Progress, Meter, StackedBar
     navigation/ Breadcrumbs
   actions/      anchor, tooltip
   state/        toast, dialog, tooltip, task, query, draft, cursor, shortcuts, clipboard (runes, .svelte.ts)

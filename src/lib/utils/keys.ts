@@ -69,3 +69,30 @@ export function formatKeys(spec: string, mac = isMac()): string {
 	const key = KEY_NAMES[c.key] ?? c.key.toUpperCase();
 	return mac ? mods.map((m) => MAC_GLYPHS[m]).join('') + key : [...mods.map((m) => PC_NAMES[m]), key].join('+');
 }
+
+const MAC_SPOKEN: Record<string, string> = { mod: 'Command', meta: 'Command', ctrl: 'Control', alt: 'Option', shift: 'Shift' };
+const PC_SPOKEN: Record<string, string> = { mod: 'Control', meta: 'Windows', ctrl: 'Control', alt: 'Alt', shift: 'Shift' };
+const KEY_SPOKEN: Record<string, string> = {
+	escape: 'Escape',
+	enter: 'Enter',
+	' ': 'Space',
+	arrowup: 'Up arrow',
+	arrowdown: 'Down arrow',
+	arrowleft: 'Left arrow',
+	arrowright: 'Right arrow',
+	backspace: 'Backspace',
+	delete: 'Delete',
+	tab: 'Tab',
+	'?': 'Question mark',
+	'/': 'Slash',
+	'+': 'Plus',
+	',': 'Comma',
+	'.': 'Period'
+};
+
+export function spokenKeys(spec: string, mac = isMac()): string {
+	const c = parseKeys(spec);
+	const names = mac ? MAC_SPOKEN : PC_SPOKEN;
+	const mods = (['ctrl', 'alt', 'shift', 'meta', 'mod'] as const).filter((m) => c[m]).map((m) => names[m]);
+	return [...mods, KEY_SPOKEN[c.key] ?? c.key.toUpperCase()].join(' ');
+}

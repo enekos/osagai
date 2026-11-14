@@ -83,6 +83,9 @@ Import the theme once, add the base styles if you want element defaults and util
 | `Card` | a bordered surface | `title`, `description`, `actions` snippet, `padding` none·sm·md, `tone` soft·danger·accent |
 | `Tile` | a card that is a link or a button | `title`, `icon`, `description`, `href` or `onclick`, `dashed`, `accent`, `aside` snippet, children as meta text. The title is a stretched link, so controls in `aside` stay clickable. |
 | `Table` | a styled `<table>` you fill with `thead`/`tbody` | `framed`, `compact`, `sticky`, `maxHeight`, `minWidth`, `scroll`. Cell classes `num`, `mono`, `actions` and `empty`, and row class `dim`, are styled. |
+| `Breadcrumbs` | a path trail | `items` (`{ label, href? }[]`), `separator` (default `/`), `mono`, `label` (the nav's `aria-label`), a `root` snippet drawn before the first item. Every crumb except the last is a link, and the last gets `aria-current="page"`. It uses margins instead of flex `gap`, so it lays out on old Safari too. |
+| `CodeView` | line-numbered code | `text` (plain, escaped for you) or `lines` (one already-escaped HTML string per line, from a highlighter), `start`, `numbers`, `wrap` (soft wrap, on by default), `anchor` (line id prefix, `L` by default, so `#L12` links and highlights a line; `''` for none). Spans with class `c`, `s` and `k` are set as comment (italic), string (softer) and keyword (bold), which still reads in greyscale. The whole file is one `{@html}` write. |
+| `Prose` | typography for rendered markdown | `html` (trusted, already sanitised) or children, `serif` (a book face for long reads), `size` sm·md·lg. It styles headings, lists, quotes, tables, code blocks, images and `details`, and fades in heading `.anchor` links on hover. |
 | `Badge` `Notice` `Empty` `Stat` `Skeleton` `Spinner` `Kbd` `Avatar` `Icon` | display | `tone` on Badge/Notice; `Kbd keys="mod+k"` shows ⌘K on a Mac and Ctrl+K elsewhere; `Icon` takes any name from the built-in set or from `registerIcons({ name: 'svg path' })` |
 
 ## Imperative helpers
@@ -259,7 +262,8 @@ src/lib/
     overlays/   Modal, Drawer, Overlays
     layout/     Page, Card, Tile, Table
     feedback/   Notice, Empty, Spinner, Skeleton
-    display/    Badge, Stat, Avatar, Kbd, Icon
+    display/    Badge, Stat, Avatar, Kbd, Icon, CodeView, Prose
+    navigation/ Breadcrumbs
   actions/      anchor, tooltip
   state/        toast, dialog, tooltip, task, query, draft, cursor, shortcuts, clipboard (runes, .svelte.ts)
   context/      field and menu context keys

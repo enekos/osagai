@@ -5,6 +5,9 @@ import Checkbox from './components/forms/Checkbox.svelte';
 import Choice from './components/forms/Choice.svelte';
 import Input from './components/forms/Input.svelte';
 import Kbd from './components/display/Kbd.svelte';
+import Breadcrumbs from './components/navigation/Breadcrumbs.svelte';
+import CodeView from './components/display/CodeView.svelte';
+import Prose from './components/display/Prose.svelte';
 import Combobox from './components/forms/Combobox.svelte';
 import DatePicker from './components/forms/DatePicker.svelte';
 import ContextMenu from './components/actions/ContextMenu.svelte';
@@ -325,5 +328,43 @@ describe('Kbd', () => {
 	it('formats a key spec', () => {
 		const el = render(Kbd, { keys: 'shift+enter' });
 		expect(el.textContent).toMatch(/^(⇧↵|Shift\+↵)$/);
+	});
+});
+
+describe('Breadcrumbs', () => {
+	it('links every crumb but the last, which is the current page', () => {
+		const t = render(Breadcrumbs, { items: [{ label: 'repo', href: '/repo' }, { label: 'src', href: '/repo/src' }, { label: 'lib', href: '/repo/src/lib' }] });
+		const links = [...t.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+		expect(links).toEqual(['/repo', '/repo/src']);
+		expect(t.querySelector('[aria-current="page"]')?.textContent).toBe('lib');
+		expect(t.querySelectorAll('.o-sep')).toHaveLength(2);
+	});
+});
+
+describe('CodeView', () => {
+	it('escapes plain text and numbers lines with anchors', () => {
+		const t = render(CodeView, { text: 'a <b>\n\nc\n' });
+		const rows = t.querySelectorAll('.o-row');
+		expect(rows).toHaveLength(3);
+		expect(t.querySelector('#L1 .o-src')?.innerHTML).toBe('a &lt;b&gt;');
+		expect(t.querySelector('#L3 a.o-ln')?.getAttribute('href')).toBe('#L3');
+	});
+
+	it('takes pre-highlighted lines as HTML and honours start and anchor', () => {
+		const t = render(CodeView, { lines: ['<span class="k">let</span> x'], start: 40, anchor: 'P' });
+		expect(t.querySelector('#P40 .k')?.textContent).toBe('let');
+	});
+
+	it('drops anchors and numbers when asked', () => {
+		const t = render(CodeView, { text: 'x', anchor: '', numbers: false });
+		expect(t.querySelector('.o-row')?.id).toBe('');
+		expect(t.querySelector('.o-ln')).toBeNull();
+	});
+});
+
+describe('Prose', () => {
+	it('renders trusted HTML', () => {
+		const t = render(Prose, { html: '<h2>Hi</h2><p>there</p>', serif: true });
+		expect(t.querySelector('.o-prose.o-serif h2')?.textContent).toBe('Hi');
 	});
 });

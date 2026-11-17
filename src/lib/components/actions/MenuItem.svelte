@@ -17,6 +17,10 @@
 
 	const close = getMenuClose();
 	function click(e: MouseEvent) {
+		if (disabled) {
+			e.preventDefault();
+			return;
+		}
 		onclick?.(e);
 		close?.();
 	}
@@ -30,7 +34,7 @@
 {/snippet}
 
 {#if href}
-	<a class="o-item" class:o-danger={danger} role="menuitem" {href} onclick={click}>{@render body()}</a>
+	<a class="o-item" class:o-danger={danger} role="menuitem" href={disabled ? undefined : href} aria-disabled={disabled || undefined} tabindex={disabled ? -1 : undefined} onclick={click}>{@render body()}</a>
 {:else}
 	<button
 		type="button"
@@ -45,7 +49,7 @@
 <style>
 	.o-item { display: flex; width: 100%; align-items: center; gap: 8px; padding: 7px 10px; border: none; background: none; border-radius: 2px; text-align: left; font: inherit; font-weight: 500; color: var(--o-text); cursor: pointer; white-space: nowrap; }
 	.o-item:hover, .o-item:focus-visible { background: var(--o-ink); color: var(--o-surface); text-decoration: none; outline: none; }
-	.o-item:disabled { opacity: 0.45; cursor: not-allowed; background: none; color: var(--o-text); }
+	.o-item:disabled, .o-item[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; background: none; color: var(--o-text); }
 	.o-danger { color: var(--o-danger); }
 	.o-danger:hover, .o-danger:focus-visible { background: var(--o-danger); color: #fff; }
 	.o-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }

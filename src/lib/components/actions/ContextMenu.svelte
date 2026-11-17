@@ -14,9 +14,13 @@
 
 	$effect(() => {
 		if (!at) return;
-		panel?.querySelector<HTMLElement>('[role^="menuitem"]')?.focus({ preventScroll: true });
+		panel?.querySelector<HTMLElement>('[role^="menuitem"]:not([disabled]):not([aria-disabled="true"])')?.focus({ preventScroll: true });
 		const key = (e: KeyboardEvent) => {
-			if (e.key === 'Escape') close();
+			if (e.key === 'Escape') {
+				e.preventDefault();
+				e.stopPropagation();
+				close();
+			}
 		};
 		const scrolled = (e: Event) => {
 			if (!panel?.contains(e.target as Node)) close();
@@ -30,11 +34,12 @@
 	});
 
 	function onkeydown(e: KeyboardEvent) {
-		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Home' && e.key !== 'End') return;
 		e.preventDefault();
-		const list = panel ? [...panel.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([disabled])')] : [];
+		const list = panel ? [...panel.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([disabled]):not([aria-disabled="true"])')] : [];
 		const i = list.indexOf(document.activeElement as HTMLElement);
-		list[(i + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length]?.focus();
+		const next = e.key === 'Home' ? 0 : e.key === 'End' ? list.length - 1 : (i + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length;
+		list[next]?.focus();
 	}
 </script>
 

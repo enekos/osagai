@@ -18,7 +18,8 @@ class Tooltips {
 	}
 
 	update(id: number, text: string): void {
-		if (this.current?.id === id) this.current = { ...this.current, text };
+		const current = this.current;
+		if (current?.id === id && current.text !== text) this.current = { ...current, text };
 	}
 
 	hide(id: number): void {

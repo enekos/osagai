@@ -48,7 +48,6 @@ mark { background: var(--o-mark); color: var(--o-mark-ink); padding: 0 2px; }
 .stat { font-family: var(--o-mono); font-variant-numeric: tabular-nums; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 @media (max-width: 760px) {
 	h1 { font-size: 24px; }
 	.row:has(> .o-field) { flex-wrap: wrap; }

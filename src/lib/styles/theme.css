@@ -10,7 +10,7 @@
 	--o-ink: #000000;
 	--o-text: #000000;
 	--o-text-2: #3f463e;
-	--o-text-3: #7a837a;
+	--o-text-3: #626a61;
 	--o-accent: #2430ff;
 	--o-accent-2: #1a24c7;
 	--o-accent-ink: #ffffff;
@@ -55,7 +55,7 @@
 		--o-ink: #e8ebe6;
 		--o-text: #f2f4f0;
 		--o-text-2: #b4bbb2;
-		--o-text-3: #7d867c;
+		--o-text-3: #8f988e;
 		--o-accent: #5b63ff;
 		--o-accent-2: #7a81ff;
 		--o-accent-ink: #ffffff;
@@ -84,7 +84,7 @@
 	--o-ink: #e8ebe6;
 	--o-text: #f2f4f0;
 	--o-text-2: #b4bbb2;
-	--o-text-3: #7d867c;
+	--o-text-3: #8f988e;
 	--o-accent: #5b63ff;
 	--o-accent-2: #7a81ff;
 	--o-accent-ink: #ffffff;
@@ -101,3 +101,5 @@
 	--o-c3: #f2f4f0; --o-c4: #ff7a5c; --o-c6: #a98bff;
 	color-scheme: dark;
 }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }

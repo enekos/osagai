@@ -5,7 +5,7 @@
 	import { setMenu } from '../../context/menu.js';
 	import { anchor } from '../../actions/anchor.js';
 
-	interface TriggerProps { onclick: (e: MouseEvent) => void; 'aria-haspopup': 'menu'; 'aria-expanded': boolean }
+	interface TriggerProps { onclick: (e: MouseEvent) => void; onkeydown: (e: KeyboardEvent) => void; 'aria-haspopup': 'menu'; 'aria-expanded': boolean }
 
 	let {
 		open = $bindable(false),
@@ -33,6 +33,7 @@
 
 	let root: HTMLSpanElement | undefined = $state();
 	let panel: HTMLDivElement | undefined = $state();
+	let focusLast = false;
 
 	function close(refocus = false) {
 		open = false;
@@ -40,20 +41,33 @@
 	}
 	setMenu(() => close());
 
+	function items(): HTMLElement[] {
+		return panel ? [...panel.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([disabled]):not([aria-disabled="true"])')] : [];
+	}
+
+	function show(last = false) {
+		focusLast = last;
+		open = true;
+	}
+
+	function triggerKeydown(e: KeyboardEvent) {
+		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+		e.preventDefault();
+		show(e.key === 'ArrowUp');
+	}
+
 	const triggerProps: TriggerProps = {
 		onclick: (e: MouseEvent) => {
 			e.stopPropagation();
-			open = !open;
+			if (open) close();
+			else show();
 		},
+		onkeydown: triggerKeydown,
 		'aria-haspopup': 'menu',
 		get 'aria-expanded'() {
 			return open;
 		}
 	};
-
-	function items(): HTMLElement[] {
-		return panel ? [...panel.querySelectorAll<HTMLElement>('[role^="menuitem"]:not([disabled])')] : [];
-	}
 
 	function onkeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
@@ -68,6 +82,13 @@
 		const next = e.key === 'Home' ? 0 : e.key === 'End' ? list.length - 1 : e.key === 'ArrowDown' ? (at + 1) % list.length : (at - 1 + list.length) % list.length;
 		list[next]?.focus();
 	}
+
+	$effect(() => {
+		if (!open || !panel) return;
+		const list = items();
+		(focusLast ? list.at(-1) : list[0])?.focus();
+		focusLast = false;
+	});
 </script>
 
 <span class="o-menu-root" bind:this={root}>
@@ -75,9 +96,9 @@
 		{@render trigger(triggerProps)}
 	{:else}
 		{#if text}
-			<Button {variant} {size} {icon} onclick={triggerProps.onclick} aria-haspopup="menu" aria-expanded={open}>{text}</Button>
+			<Button {variant} {size} {icon} onclick={triggerProps.onclick} onkeydown={triggerProps.onkeydown} aria-haspopup="menu" aria-expanded={open}>{text}</Button>
 		{:else}
-			<Button {variant} {size} {icon} {label} onclick={triggerProps.onclick} aria-haspopup="menu" aria-expanded={open} />
+			<Button {variant} {size} {icon} {label} onclick={triggerProps.onclick} onkeydown={triggerProps.onkeydown} aria-haspopup="menu" aria-expanded={open} />
 		{/if}
 	{/if}
 	{#if open}

@@ -14,11 +14,39 @@ import { copied, copy } from './state/clipboard.svelte.js';
 import { iconNames, registerIcons } from './utils/icons.js';
 import { toOptions } from './utils/options.js';
 import { placeBox } from './utils/position.js';
+import { trapTab } from './utils/focus.js';
+import { tooltips } from './state/tooltip.svelte.js';
 import { addDays, addMonths, clampDate, isDate, monthGrid, weekdayNames } from './utils/dates.js';
 
 afterEach(() => {
 	toast.clear();
+	tooltips.clear();
 	while (dialogs.current) dialogs.dismiss();
+});
+
+describe('tooltips', () => {
+	it('does not publish new state when the visible text has not changed', () => {
+		const id = tooltips.show('Delete', document.createElement('button'));
+		const current = tooltips.current;
+		tooltips.update(id, 'Delete');
+		expect(tooltips.current).toBe(current);
+		tooltips.update(id, 'Remove');
+		expect(tooltips.current?.text).toBe('Remove');
+	});
+});
+
+describe('focus trap', () => {
+	it('keeps Tab on the container when there are no focusable children', () => {
+		const dialog = document.createElement('div');
+		dialog.tabIndex = -1;
+		document.body.appendChild(dialog);
+		dialog.focus();
+		const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+		trapTab(event, dialog);
+		expect(event.defaultPrevented).toBe(true);
+		expect(document.activeElement).toBe(dialog);
+		dialog.remove();
+	});
 });
 
 describe('toOptions', () => {

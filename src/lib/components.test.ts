@@ -12,6 +12,7 @@ import Combobox from './components/forms/Combobox.svelte';
 import DatePicker from './components/forms/DatePicker.svelte';
 import ContextMenu from './components/actions/ContextMenu.svelte';
 import Menu from './components/actions/Menu.svelte';
+import MenuItem from './components/actions/MenuItem.svelte';
 import Select from './components/forms/Select.svelte';
 import Tabs from './components/forms/Tabs.svelte';
 import Overlays from './components/overlays/Overlays.svelte';
@@ -106,6 +107,13 @@ describe('Tabs', () => {
 		expect(tabs[1]!.id).toBe('views-1');
 		expect(tabs[1]!.getAttribute('aria-controls')).toBe('views-panel');
 	});
+
+	it('keeps an enabled tab in the tab order when the selected tab is disabled or missing', () => {
+		const disabled = render(Tabs, { value: 'a', items: [{ value: 'a', label: 'A', disabled: true }, 'b'] });
+		expect([...disabled.querySelectorAll<HTMLButtonElement>('[role="tab"]')].map((tab) => tab.tabIndex)).toEqual([-1, 0]);
+		const missing = render(Tabs, { value: 'missing', items: ['a', 'b'] });
+		expect([...missing.querySelectorAll<HTMLButtonElement>('[role="tab"]')].map((tab) => tab.tabIndex)).toEqual([0, -1]);
+	});
 });
 
 describe('Segmented', () => {
@@ -120,6 +128,11 @@ describe('Segmented', () => {
 		expect(picked).toBe('month');
 		expect(radios[2]!.getAttribute('aria-checked')).toBe('true');
 		expect(document.activeElement).toBe(radios[2]);
+	});
+
+	it('moves the tab stop to an enabled option when the selected option is disabled', () => {
+		const t = render(Segmented, { value: 'a', options: [{ value: 'a', label: 'A', disabled: true }, 'b'] });
+		expect([...t.querySelectorAll<HTMLButtonElement>('[role="radio"]')].map((radio) => radio.tabIndex)).toEqual([-1, 0]);
 	});
 });
 
@@ -261,6 +274,23 @@ describe('Menu', () => {
 		pointerdown(document.body);
 		expect(t.querySelector('[role="menu"]')).toBeNull();
 	});
+
+	it('opens from the trigger keyboard, focuses items and restores the trigger on Escape', () => {
+		const t = render(Menu, { children: menuItems });
+		const trigger = t.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')!;
+		key(trigger, 'ArrowDown');
+		expect(document.activeElement?.textContent).toBe('One');
+		key(document.activeElement!, 'End');
+		expect(document.activeElement?.textContent).toBe('Two');
+		key(document.activeElement!, 'Escape');
+		expect(t.querySelector('[role="menu"]')).toBeNull();
+		expect(document.activeElement).toBe(trigger);
+		key(trigger, 'ArrowUp');
+		expect(document.activeElement?.textContent).toBe('Two');
+		const external = render(Menu, { open: true, children: menuItems });
+		expect(external.querySelector('[role="menu"]')).not.toBeNull();
+		expect(document.activeElement?.textContent).toBe('One');
+	});
 });
 
 describe('ContextMenu', () => {
@@ -271,10 +301,20 @@ describe('ContextMenu', () => {
 		const panel = t.querySelector<HTMLElement>('[role="menu"]')!;
 		expect(panel.style.position).toBe('fixed');
 		expect(document.activeElement?.textContent).toBe('One');
+		key(document.activeElement!, 'End');
+		expect(document.activeElement?.textContent).toBe('Two');
+		key(document.activeElement!, 'Home');
+		expect(document.activeElement?.textContent).toBe('One');
 		pointerdown(header);
 		expect(t.querySelector('[role="menu"]')).not.toBeNull();
-		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+		const windowKey = vi.fn();
+		window.addEventListener('keydown', windowKey);
+		const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+		document.dispatchEvent(escape);
+		window.removeEventListener('keydown', windowKey);
 		flushSync();
+		expect(escape.defaultPrevented).toBe(true);
+		expect(windowKey).not.toHaveBeenCalled();
 		expect(t.querySelector('[role="menu"]')).toBeNull();
 	});
 });
@@ -350,6 +390,11 @@ describe('Choice', () => {
 		expect(radios[0]!.getAttribute('aria-checked')).toBe('true');
 		expect(seen).toEqual(['c', 'a']);
 	});
+
+	it('moves the tab stop to an enabled card when the selected card is disabled', () => {
+		const t = render(Choice, { value: 'a', options: [{ value: 'a', label: 'A', disabled: true }, 'b'] });
+		expect([...t.querySelectorAll<HTMLButtonElement>('[role="radio"]')].map((radio) => radio.tabIndex)).toEqual([-1, 0]);
+	});
 });
 
 describe('Input', () => {
@@ -407,6 +452,19 @@ describe('Prose', () => {
 
 const popoverBody = createRawSnippet(() => ({ render: () => '<div><input aria-label="Name" /><button>Apply</button></div>' }));
 const text = (t: string) => createRawSnippet(() => ({ render: () => `<span>${t}</span>` }));
+
+describe('MenuItem', () => {
+	it('makes a disabled link inert and removes it from keyboard navigation', () => {
+		const onclick = vi.fn();
+		const t = render(MenuItem, { href: '/delete', disabled: true, onclick, children: text('Delete') });
+		const link = t.querySelector<HTMLAnchorElement>('[role="menuitem"]')!;
+		expect(link.getAttribute('href')).toBeNull();
+		expect(link.getAttribute('aria-disabled')).toBe('true');
+		expect(link.tabIndex).toBe(-1);
+		link.click();
+		expect(onclick).not.toHaveBeenCalled();
+	});
+});
 
 describe('Popover', () => {
 	it('opens a labelled dialog, focuses its first field, and Escape closes it and refocuses the trigger', () => {

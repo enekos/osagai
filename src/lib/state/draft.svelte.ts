@@ -12,15 +12,17 @@ export interface Draft<T> {
 	snapshot(): T;
 }
 
-function same(a: unknown, b: unknown): boolean {
-	return JSON.stringify(a) === JSON.stringify(b);
-}
-
 export function draft<T>(get: () => T, options: DraftOptions<T> = {}): Draft<T> {
-	const equal = options.equal ?? same;
+	const custom = options.equal;
 	const snapshot = (): T => $state.snapshot(get()) as T;
 	let saved = $state.raw<T>(untrack(snapshot));
-	const dirty = $derived(!equal(snapshot(), saved));
+	// With the default equality, serialize the saved value once at commit time so
+	// `dirty` only stringifies the live value (one pass per read, not two).
+	let savedJson = $state(custom ? '' : JSON.stringify(saved));
+	const dirty = $derived.by(() => {
+		const current = snapshot();
+		return custom ? !custom(current, saved) : JSON.stringify(current) !== savedJson;
+	});
 
 	if (options.guard !== false && typeof window !== 'undefined') {
 		$effect(() => {
@@ -40,6 +42,7 @@ export function draft<T>(get: () => T, options: DraftOptions<T> = {}): Draft<T> 
 		},
 		commit() {
 			saved = snapshot();
+			if (!custom) savedJson = JSON.stringify(saved);
 		},
 		snapshot
 	};

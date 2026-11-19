@@ -6,17 +6,22 @@
 	let { at = $bindable(null), children }: { at?: { x: number; y: number } | HTMLElement | null; children: Snippet } = $props();
 
 	let panel: HTMLDivElement | undefined = $state();
-	setMenu(() => close());
+	setMenu(() => close(true));
 
-	function close() {
+	function close(refocus = false) {
+		const target = at;
 		at = null;
+		if (refocus && target instanceof HTMLElement) target.focus();
 	}
 
 	$effect(() => {
 		if (!at) return;
 		panel?.querySelector<HTMLElement>('[role^="menuitem"]')?.focus({ preventScroll: true });
 		const key = (e: KeyboardEvent) => {
-			if (e.key === 'Escape') close();
+			if (e.key === 'Escape') {
+				e.stopPropagation(); // don't let one Escape also clear selections or close underlying modals
+				close(true);
+			}
 		};
 		const scrolled = (e: Event) => {
 			if (!panel?.contains(e.target as Node)) close();
@@ -39,7 +44,7 @@
 </script>
 
 {#if at}
-	<div class="o-context" bind:this={panel} role="menu" tabindex="-1" {onkeydown} use:anchor={{ to: at, gap: at instanceof HTMLElement ? 4 : 0, onoutside: close }}>
+	<div class="o-context" bind:this={panel} role="menu" tabindex="-1" {onkeydown} use:anchor={{ to: at, gap: at instanceof HTMLElement ? 4 : 0, onoutside: () => close() }}>
 		{@render children()}
 	</div>
 {/if}

@@ -6,6 +6,7 @@
 	let {
 		items,
 		active = $bindable(0),
+		selected,
 		id = `o-lb-${uid}`,
 		label,
 		onpick,
@@ -15,6 +16,8 @@
 	}: {
 		items: readonly T[];
 		active?: number;
+		/** Index of the committed selection; drives aria-selected (falls back to the active highlight). */
+		selected?: number;
 		id?: string;
 		label?: string;
 		onpick: (item: T, index: number) => void;
@@ -25,28 +28,38 @@
 
 	let list: HTMLUListElement | undefined = $state();
 
+	// Clamp the highlight so it always matches the parent's aria-activedescendant,
+	// even when `items` shrinks without a pointer/keyboard event.
+	const hi = $derived(items.length ? Math.max(0, Math.min(active, items.length - 1)) : -1);
+
 	$effect(() => {
-		list?.children.item(active)?.scrollIntoView({ block: 'nearest' });
+		if (hi >= 0) list?.children.item(hi)?.scrollIntoView({ block: 'nearest' });
 	});
 </script>
 
-<ul {id} bind:this={list} class="o-listbox {className}" role="listbox" aria-label={label}>
+<ul
+	{id}
+	bind:this={list}
+	class="o-listbox {className}"
+	role="listbox"
+	aria-label={label}
+	onmousedown={(e) => e.preventDefault() /* keep focus on the combobox input, even for scrollbar drags */}>
 	{#each items as it, i (i)}
 		<li
 			id="{id}-{i}"
 			class="o-option"
-			class:o-active={i === active}
+			class:o-active={i === hi}
 			role="option"
-			aria-selected={i === active}
+			aria-selected={selected === undefined ? i === hi : i === selected}
 			onmousedown={(e) => {
 				e.preventDefault();
 				onpick(it, i);
 			}}
 			onmouseenter={() => (active = i)}>
-			{@render item(it, { index: i, active: i === active })}
+			{@render item(it, { index: i, active: i === hi })}
 		</li>
 	{:else}
-		{#if empty}<li class="o-listbox-empty" role="presentation">{@render empty()}</li>{/if}
+		{#if empty}<li class="o-listbox-empty" role="status">{@render empty()}</li>{/if}
 	{/each}
 </ul>
 

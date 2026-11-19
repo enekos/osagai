@@ -26,7 +26,8 @@
 
 	function onkeydown(e: KeyboardEvent) {
 		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Home' && e.key !== 'End') return;
-		const heads = root ? [...root.querySelectorAll<HTMLButtonElement>(':scope > .o-collapsible > .o-collapsible-head:not(:disabled)')] : [];
+		// Not `:scope > .o-collapsible > …`: items may be wrapped (li, grid cells) and arrow nav must still work.
+		const heads = root ? [...root.querySelectorAll<HTMLButtonElement>('.o-collapsible-head:not(:disabled)')] : [];
 		const at = heads.indexOf(document.activeElement as HTMLButtonElement);
 		if (at < 0) return;
 		e.preventDefault();

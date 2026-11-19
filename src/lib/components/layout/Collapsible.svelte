@@ -10,6 +10,7 @@
 		title,
 		hint,
 		disabled = false,
+		heading,
 		ontoggle,
 		aside,
 		children
@@ -18,6 +19,8 @@
 		title: string | Snippet;
 		hint?: string;
 		disabled?: boolean;
+		/** wrap the header button in a heading (APG accordion pattern) */
+		heading?: 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 		ontoggle?: (open: boolean) => void;
 		aside?: Snippet;
 		children: Snippet;
@@ -28,8 +31,13 @@
 	group?.register(id, open);
 	const expanded = $derived(group ? group.isOpen(id) : open);
 
+	// Inside an Accordion, keep the bindable prop and the group in sync both ways:
+	// header clicks flow group → prop, external `open` writes flow prop → group.
 	$effect(() => {
-		if (group) open = expanded;
+		if (group && open !== expanded) open = expanded;
+	});
+	$effect(() => {
+		if (group && open !== group.isOpen(id)) group.toggle(id, open);
 	});
 
 	function toggle() {
@@ -40,12 +48,20 @@
 	}
 </script>
 
-<div class="o-collapsible" class:o-open={expanded}>
+{#snippet head()}
 	<button type="button" class="o-collapsible-head" id="{id}-head" aria-expanded={expanded} aria-controls="{id}-panel" {disabled} onclick={toggle}>
 		<span class="o-chev" aria-hidden="true"><Icon name="chevron" size={12} /></span>
 		<span class="o-title">{#if typeof title === 'string'}{title}{:else}{@render title()}{/if}</span>
 		{#if hint}<span class="o-hint">{hint}</span>{/if}
 	</button>
+{/snippet}
+
+<div class="o-collapsible" class:o-open={expanded}>
+	{#if heading}
+		<svelte:element this={heading} class="o-collapsible-heading">{@render head()}</svelte:element>
+	{:else}
+		{@render head()}
+	{/if}
 	{#if aside}<div class="o-aside">{@render aside()}</div>{/if}
 	<div class="o-collapsible-panel" id="{id}-panel" role="region" aria-labelledby="{id}-head" inert={!expanded}>
 		<div class="o-collapsible-inner"><div class="o-collapsible-body">{@render children()}</div></div>
@@ -54,7 +70,8 @@
 
 <style>
 	.o-collapsible { display: grid; grid-template-columns: 1fr auto; align-items: center; min-width: 0; }
-	.o-collapsible-head { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px 0; border: none; background: none; color: var(--o-text); font: inherit; font-weight: 700; text-align: left; cursor: pointer; }
+	.o-collapsible-heading { display: contents; font: inherit; } /* heading semantics without UA heading styles */
+	.o-collapsible-head { display: flex; align-items: center; gap: 8px; min-width: 0; width: 100%; padding: 6px 0; border: none; background: none; color: var(--o-text); font: inherit; font-weight: 700; text-align: left; cursor: pointer; }
 	.o-collapsible-head:hover .o-title { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 2px; }
 	.o-chev { display: inline-grid; place-items: center; flex: none; transition: transform var(--o-duration) var(--o-ease-out); }
 	.o-open .o-chev { transform: rotate(90deg); }

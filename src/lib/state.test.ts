@@ -60,6 +60,17 @@ describe('toast', () => {
 		expect(toast.items).toEqual([]);
 		vi.useRealTimers();
 	});
+
+	it('keeps actionable toasts until dismissed and forgets their timers', () => {
+		vi.useFakeTimers();
+		toast.ok('undoable', { action: { label: 'Undo', run: () => {} } });
+		vi.advanceTimersByTime(10_000);
+		expect(toast.items).toHaveLength(1);
+		toast.dismiss(toast.items[0]!.id);
+		vi.advanceTimersByTime(10_000);
+		expect(toast.items).toEqual([]);
+		vi.useRealTimers();
+	});
 });
 
 describe('task', () => {

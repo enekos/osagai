@@ -3,7 +3,7 @@
 	import Button from '../actions/Button.svelte';
 	import type { IconName } from '../../utils/icons.js';
 	import { anchor } from '../../actions/anchor.js';
-	import { trapTab } from '../../utils/focus.js';
+	import { focusables } from '../../utils/focus.js';
 	import type { Side } from '../../utils/position.js';
 
 	interface TriggerProps { onclick: (e: MouseEvent) => void; 'aria-haspopup': 'dialog'; 'aria-expanded': boolean; 'aria-controls': string }
@@ -74,7 +74,16 @@
 			close(true);
 			return;
 		}
-		if (e.key === 'Tab' && panel) trapTab(e, panel);
+		if (e.key === 'Tab') {
+			// Non-modal dialog: Tab moves focus onward through the page instead of trapping (APG).
+			e.preventDefault();
+			const t = triggerEl();
+			close();
+			if (!t) return;
+			const all = focusables(document.body).filter((el) => !panel?.contains(el));
+			const next = all[all.indexOf(t) + (e.shiftKey ? -1 : 1)];
+			(next ?? t).focus();
+		}
 	}
 
 	$effect(() => {
@@ -97,7 +106,7 @@
 			id={panelId}
 			class="o-popover"
 			role="dialog"
-			aria-label={title ?? label}
+			aria-label={title}
 			tabindex="-1"
 			style:width
 			bind:this={panel}
@@ -116,6 +125,7 @@
 		background: var(--o-surface); color: var(--o-text); border: var(--o-line) solid var(--o-border-strong); border-radius: var(--o-radius); box-shadow: var(--o-shadow-lg); outline: none;
 		animation: o-popover-in var(--o-duration) var(--o-ease-out);
 	}
+	.o-popover:focus-visible { outline: 2px solid var(--o-accent); outline-offset: -2px; }
 	.o-popover-title { padding: 8px 12px; font-size: 12px; font-weight: 700; border-bottom: var(--o-line) solid var(--o-border-strong); background: var(--o-surface-2); }
 	.o-popover-body { padding: 12px; }
 	@keyframes o-popover-in { from { opacity: 0; } }

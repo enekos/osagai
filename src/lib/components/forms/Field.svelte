@@ -45,7 +45,7 @@
 	{/if}
 	{@render children()}
 	{#if error}
-		<div class="o-hint o-error" id={hintId}>{error}</div>
+		<div class="o-hint o-error" id={hintId} role="alert">{error}</div>
 	{:else if hint}
 		<div class="o-hint" id={hintId}>{#if typeof hint === 'string'}{hint}{:else}{@render hint()}{/if}</div>
 	{/if}

@@ -108,7 +108,7 @@
 	<span class="o-combo-caret" aria-hidden="true"><Icon name="chevron-down" size={14} /></span>
 	{#if open}
 		<div class="o-combo-pop" use:anchor={{ to: input, matchWidth: true, onoutside: close }}>
-			<Listbox items={shown} bind:active={cursor.active} id={listId} onpick={(o: Option<T>) => pick(o)}>
+			<Listbox items={shown} bind:active={cursor.active} selected={chosen ? shown.indexOf(chosen) : -1} id={listId} onpick={(o: Option<T>) => pick(o)}>
 				{#snippet item(o: Option<T>)}
 					<span class="o-combo-label">{o.label}</span>
 					{#if o === chosen}<Icon name="check" size={13} />{/if}

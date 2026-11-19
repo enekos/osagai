@@ -12,7 +12,8 @@
 
 	const items = $derived(toOptions(options));
 	const picked = $derived(items.findIndex((o) => o.value === value));
-	const focusable = $derived(picked >= 0 ? picked : items.findIndex((o) => !o.disabled));
+	// Roving tabindex must skip a disabled checked option, or the group loses its only tab stop.
+	const focusable = $derived(picked >= 0 && !items[picked]?.disabled ? picked : items.findIndex((o) => !o.disabled));
 	let root = $state<HTMLElement>();
 
 	function pick(i: number) {

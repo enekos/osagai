@@ -19,13 +19,14 @@
 	}
 
 	/** 0 for no match; higher is better. A prefix beats a word start beats a substring beats a subsequence. */
-	export function scoreCommand(c: Command, query: string): number {
+	export function scoreCommand(c: Command, query: string, wordStart?: RegExp): number {
 		const q = query.trim().toLowerCase();
 		if (!q) return 1;
 		const title = c.title.toLowerCase();
 		if (title === q) return 100;
 		if (title.startsWith(q)) return 80;
-		if (new RegExp(`\\b${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(title)) return 60;
+		const re = wordStart ?? new RegExp(`\\b${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+		if (re.test(title)) return 60;
 		if (title.includes(q)) return 40;
 		const extra = [c.subtitle ?? '', c.group ?? '', ...(c.keywords ?? [])].join(' ').toLowerCase();
 		if (extra.includes(q)) return 30;
@@ -74,7 +75,10 @@
 	interface Group { name: string; rows: { row: Row; index: number }[] }
 
 	const ranked = $derived.by(() => {
-		const scored = commands.map((c, i) => ({ c, i, s: scoreCommand(c, query) })).filter((x) => x.s > 0);
+		// Compile the word-boundary regex once per keystroke, not once per command.
+		const q = query.trim().toLowerCase();
+		const wordStart = q ? new RegExp(`\\b${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) : undefined;
+		const scored = commands.map((c, i) => ({ c, i, s: scoreCommand(c, query, wordStart) })).filter((x) => x.s > 0);
 		if (query.trim()) scored.sort((a, b) => b.s - a.s || a.i - b.i);
 		const groups: { name: string; commands: Command[] }[] = [];
 		for (const { c } of scored) {
@@ -221,7 +225,7 @@
 						{/each}
 					</div>
 				{:else}
-					<div class="o-palette-empty" role="presentation">{empty}</div>
+					<div class="o-palette-empty" role="status">{empty}</div>
 				{/each}
 			</div>
 			<div class="o-palette-foot" aria-hidden="true">

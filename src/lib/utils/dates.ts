@@ -60,12 +60,24 @@ export function monthGrid(date: string, weekStart = 1): string[] {
 	return Array.from({ length: 42 }, (_, i) => addDays(start, i));
 }
 
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+function formatter(locale: string | undefined, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+	const key = `${locale ?? ''}:${JSON.stringify(options)}`;
+	let fmt = formatters.get(key);
+	if (!fmt) {
+		fmt = new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' });
+		formatters.set(key, fmt);
+	}
+	return fmt;
+}
+
 export function formatDate(date: string, options: Intl.DateTimeFormatOptions, locale?: string): string {
-	return new Intl.DateTimeFormat(locale, { ...options, timeZone: 'UTC' }).format(parse(date));
+	return formatter(locale, options).format(parse(date));
 }
 
 export function weekdayNames(weekStart = 1, locale?: string, width: 'narrow' | 'short' | 'long' = 'short'): string[] {
 	const sunday = Date.UTC(2023, 0, 1);
-	const fmt = new Intl.DateTimeFormat(locale, { weekday: width, timeZone: 'UTC' });
+	const fmt = formatter(locale, { weekday: width });
 	return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(sunday + ((i + weekStart) % 7) * DAY)));
 }

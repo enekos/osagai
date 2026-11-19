@@ -26,9 +26,9 @@
 	class:o-indeterminate={pct === null}
 	role="progressbar"
 	aria-label={label}
-	aria-valuemin={0}
+	aria-valuemin={pct === null ? undefined : 0}
 	aria-valuemax={pct === null ? undefined : max}
-	aria-valuenow={pct === null ? undefined : value}
+	aria-valuenow={pct === null ? undefined : Math.max(0, Math.min(max, value ?? 0))}
 	aria-valuetext={text}
 	style:--o-pct={pct ?? 30}>
 	{#if shape === 'ring'}
@@ -56,6 +56,9 @@
 	.o-bar.o-lg .o-bar-track { height: 14px; }
 	.o-bar-fill { position: absolute; inset: 0 auto 0 0; width: calc(var(--o-pct) * 1%); background: var(--o-tone); transition: width var(--o-duration-slow) var(--o-ease-out); }
 	.o-indeterminate .o-bar-fill { animation: o-progress-slide 1.2s var(--o-ease-out) infinite; }
+	@media (prefers-reduced-motion: reduce) {
+		.o-indeterminate .o-bar-fill, .o-indeterminate svg { animation: none; }
+	}
 	@keyframes o-progress-slide { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
 	.o-bar-value { flex: none; min-width: 4ch; text-align: right; font-family: var(--o-mono); font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--o-text-2); }
 

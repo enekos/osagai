@@ -29,11 +29,16 @@
 	$effect(() => {
 		if (!open) return;
 		const before = document.activeElement as HTMLElement | null;
+		const overflow = document.body.style.overflow; // aria-modal: lock background scroll like Modal
+		document.body.style.overflow = 'hidden';
 		requestAnimationFrame(() => {
 			if (!panel || panel.contains(document.activeElement)) return;
 			(panel.querySelector<HTMLElement>('[autofocus]') ?? panel).focus();
 		});
-		return () => before?.focus();
+		return () => {
+			document.body.style.overflow = overflow;
+			before?.focus();
+		};
 	});
 </script>
 
@@ -53,7 +58,8 @@
 {/if}
 
 <style>
-	.o-drawer { position: fixed; top: 0; right: 0; bottom: 0; background: var(--o-surface); border-left: var(--o-line) solid var(--o-border-strong); box-shadow: var(--o-shadow-lg); z-index: 40; display: flex; flex-direction: column; }
+	.o-drawer { position: fixed; top: 0; right: 0; bottom: 0; background: var(--o-surface); border-left: var(--o-line) solid var(--o-border-strong); box-shadow: var(--o-shadow-lg); z-index: 40; display: flex; flex-direction: column; outline: none; }
+	.o-drawer:focus-visible { outline: 2px solid var(--o-accent); outline-offset: -2px; }
 	header { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: var(--o-line) solid var(--o-border-strong); background: var(--o-ink); color: var(--o-surface); }
 	.o-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
 	h2 { color: var(--o-surface); font-size: 18px; }

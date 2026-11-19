@@ -15,7 +15,7 @@
 	const glyph = $derived(tone === 'ok' ? 'check' : tone === 'error' || tone === 'warn' ? 'alert' : 'info');
 </script>
 
-<div class="o-notice o-{tone} {className}" role={tone === 'error' ? 'alert' : undefined} {...rest}>
+<div class="o-notice o-{tone} {className}" role={tone === 'error' ? 'alert' : tone === 'warn' ? 'status' : undefined} {...rest}>
 	<span class="o-mark" class:o-bare={!icon} aria-hidden="true">{#if icon}<Icon name={glyph} size={14} />{/if}</span>
 	<div class="o-body">
 		{#if title}<strong class="o-title">{title}</strong>{/if}

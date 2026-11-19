@@ -35,6 +35,8 @@
 	}
 
 	const checkedIndex = $derived(opts.findIndex((o) => o.value === value));
+	// Roving tabindex must skip a disabled checked option, or the group loses its only tab stop.
+	const focusable = $derived(checkedIndex >= 0 && !opts[checkedIndex]?.disabled ? checkedIndex : opts.findIndex((o) => !o.disabled));
 </script>
 
 <div class="o-segmented o-{size}" class:o-block={block} role="radiogroup" aria-label={label} aria-disabled={disabled || undefined} tabindex="-1" bind:this={root} {onkeydown}>
@@ -43,7 +45,7 @@
 			type="button"
 			role="radio"
 			aria-checked={o.value === value}
-			tabindex={i === (checkedIndex < 0 ? 0 : checkedIndex) ? 0 : -1}
+			tabindex={i === focusable ? 0 : -1}
 			class:o-active={o.value === value}
 			disabled={disabled || o.disabled}
 			onclick={() => pick(o.value)}>{#if o.icon}<Icon name={o.icon} size={13} />{/if}{o.label}</button>

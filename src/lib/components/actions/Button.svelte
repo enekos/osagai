@@ -56,7 +56,8 @@
 {/snippet}
 
 {#if href !== undefined}
-	<a {...rest as HTMLAnchorAttributes} class={classes} {href} aria-label={square ? label : undefined} use:tooltip={tip}>{@render inner()}</a>
+	{@const link = rest as HTMLAnchorAttributes}
+	<a {...link} class={classes} {href} aria-label={link['aria-label'] ?? (square ? label : undefined)} use:tooltip={tip}>{@render inner()}</a>
 {:else}
 	{@const attrs = rest as HTMLButtonAttributes}
 	<button

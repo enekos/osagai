@@ -46,10 +46,17 @@
 		if (got === want) return 'ok';
 		return Math.abs(got - want) === 1 ? 'warn' : 'danger';
 	});
-	const text = $derived(valueText ?? `${Math.round(pct)}%`);
+	// The zone is otherwise conveyed by fill color alone (WCAG 1.4.1) — include it in the value text.
+	const text = $derived(
+		valueText ??
+			(tone === undefined && auto !== 'accent'
+				? `${Math.round(pct)}%, ${auto === 'ok' ? 'within range' : `${auto} range`}`
+				: `${Math.round(pct)}%`)
+	);
+	const clamped = $derived(Math.min(max, Math.max(min, value)));
 </script>
 
-<div class="o-meter o-{shape} o-{size} o-{tone ?? auto}" role="meter" aria-label={label} aria-valuemin={min} aria-valuemax={max} aria-valuenow={value} aria-valuetext={text} style:--o-pct={pct}>
+<div class="o-meter o-{shape} o-{size} o-{tone ?? auto}" role="meter" aria-label={label} aria-valuemin={min} aria-valuemax={max} aria-valuenow={clamped} aria-valuetext={text} style:--o-pct={pct}>
 	{#if shape === 'ring'}
 		<svg viewBox="0 0 36 36" aria-hidden="true">
 			<circle class="o-track" cx="18" cy="18" r="15" pathLength="100" />

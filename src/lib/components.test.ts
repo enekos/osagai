@@ -106,6 +106,12 @@ describe('Tabs', () => {
 		expect(tabs[1]!.id).toBe('views-1');
 		expect(tabs[1]!.getAttribute('aria-controls')).toBe('views-panel');
 	});
+
+	it('keeps a tab stop when the selected tab is disabled', () => {
+		const t = render(Tabs, { value: 'a', items: [{ value: 'a', label: 'A', disabled: true }, 'b'] });
+		const tabs = [...t.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+		expect(tabs.map((x) => x.tabIndex)).toEqual([-1, 0]);
+	});
 });
 
 describe('Segmented', () => {
@@ -120,6 +126,12 @@ describe('Segmented', () => {
 		expect(picked).toBe('month');
 		expect(radios[2]!.getAttribute('aria-checked')).toBe('true');
 		expect(document.activeElement).toBe(radios[2]);
+	});
+
+	it('keeps a tab stop when the checked option is disabled', () => {
+		const t = render(Segmented, { value: 'day', options: [{ value: 'day', label: 'day', disabled: true }, 'month'] });
+		const radios = [...t.querySelectorAll<HTMLButtonElement>('[role="radio"]')];
+		expect(radios.map((r) => r.tabIndex)).toEqual([-1, 0]);
 	});
 });
 
@@ -259,6 +271,17 @@ describe('Menu', () => {
 		pointerdown(panel.querySelector('button')!);
 		expect(t.querySelector('[role="menu"]')).not.toBeNull();
 		pointerdown(document.body);
+		expect(t.querySelector('[role="menu"]')).toBeNull();
+	});
+
+	it('opens with ArrowDown, focuses the first item and closes on Tab', () => {
+		const t = render(Menu, { children: menuItems });
+		const trigger = t.querySelector<HTMLButtonElement>('[aria-haspopup="menu"]')!;
+		trigger.focus();
+		key(trigger, 'ArrowDown');
+		expect(t.querySelector('[role="menu"]')).not.toBeNull();
+		expect(document.activeElement?.textContent).toBe('One');
+		key(t.querySelector('[role="menu"]')!, 'Tab');
 		expect(t.querySelector('[role="menu"]')).toBeNull();
 	});
 });

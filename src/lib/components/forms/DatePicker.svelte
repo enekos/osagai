@@ -112,11 +112,12 @@
 	function onfocusout(e: FocusEvent) {
 		const to = e.relatedTarget as Node | null;
 		if (to && (panel?.contains(to) || trigger?.contains(to))) return;
-		if (to) close();
+		close(); // also when focus leaves the document (relatedTarget null)
 	}
 </script>
 
 <span class="o-dp {className}">
+	<!-- svelte-ignore a11y_role_supports_aria_props_implicit -->
 	<button
 		bind:this={trigger}
 		type="button"
@@ -126,6 +127,7 @@
 		{disabled}
 		aria-label={label}
 		aria-describedby={field?.describedBy}
+		aria-invalid={field?.invalid || undefined}
 		data-invalid={field?.invalid || undefined}
 		aria-haspopup="dialog"
 		aria-expanded={open}
@@ -166,7 +168,7 @@
 					{#each { length: 6 } as _, row (row)}
 						<tr>
 							{#each days.slice(row * 7, row * 7 + 7) as d (d)}
-								<td role="gridcell" aria-selected={d === chosen}>
+								<td role="gridcell">
 									<button
 										type="button"
 										class="o-dp-day"
@@ -177,6 +179,7 @@
 										tabindex={d === view ? 0 : -1}
 										disabled={outOfRange(d)}
 										aria-label={formatDate(d, { dateStyle: 'full' }, locale)}
+										aria-pressed={d === chosen}
 										aria-current={d === now ? 'date' : undefined}
 										onclick={() => pick(d)}>{+d.slice(8)}</button>
 								</td>

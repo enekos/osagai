@@ -26,7 +26,10 @@
 	class:o-dragging={dragging}
 	disabled={busy}
 	ondragover={(e) => { e.preventDefault(); dragging = true; }}
-	ondragleave={() => (dragging = false)}
+	ondragleave={(e) => {
+		// Ignore transitions into child elements; only leaving the zone clears the highlight.
+		if (!e.currentTarget.contains(e.relatedTarget as Node | null)) dragging = false;
+	}}
 	ondrop={(e) => { e.preventDefault(); dragging = false; take(e.dataTransfer?.files); }}
 	onclick={() => input?.click()}>
 	{#if busy}<Spinner size={22} />{:else}<Icon name="upload" size={24} stroke={1.5} />{/if}

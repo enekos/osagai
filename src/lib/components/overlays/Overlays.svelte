@@ -70,7 +70,8 @@
 	<div class="o-tooltip" id={tooltipId(tooltips.current.id)} role="tooltip" use:anchor={{ to: tooltips.current.to, side: tooltips.current.side, gap: 6 }}>{tooltips.current.text}</div>
 {/if}
 
-<div class="o-toasts" aria-live="polite">
+<!-- Each toast is its own live region via role=status/alert; no aria-live on the container (nested live regions double-announce). -->
+<div class="o-toasts">
 	{#each toast.items as t (t.id)}
 		<div class="o-toast o-{t.kind}" role={t.kind === 'error' ? 'alert' : 'status'}>
 			<Icon name={t.kind === 'ok' ? 'check' : t.kind === 'error' ? 'alert' : 'info'} />

@@ -15,6 +15,9 @@
 	}: { value: T; items: readonly OptionInput<T>[]; size?: 'md' | 'sm'; label?: string; block?: boolean; id?: string; controls?: string; onchange?: (value: T) => void } = $props();
 
 	const options = $derived(toOptions(items));
+	const activeIndex = $derived(options.findIndex((o) => o.value === value));
+	// Roving tabindex must skip a disabled selected tab, or the tablist loses its only tab stop.
+	const focusable = $derived(activeIndex >= 0 && !options[activeIndex]?.disabled ? activeIndex : options.findIndex((o) => !o.disabled));
 	let root: HTMLDivElement | undefined = $state();
 
 	function pick(v: T) {
@@ -36,7 +39,7 @@
 
 <div class="o-tabs o-{size}" class:o-block={block} role="tablist" aria-label={label} tabindex="-1" bind:this={root} {onkeydown}>
 	{#each options as o, i (o.value)}
-		<button type="button" role="tab" id="{id}-{i}" aria-controls={controls} tabindex={o.value === value ? 0 : -1} aria-selected={o.value === value} class:o-active={o.value === value} disabled={o.disabled} onclick={() => pick(o.value)}>{o.label}{#if o.badge}<span class="o-count">{o.badge}</span>{/if}</button>
+		<button type="button" role="tab" id="{id}-{i}" aria-controls={controls} tabindex={i === focusable ? 0 : -1} aria-selected={o.value === value} class:o-active={o.value === value} disabled={o.disabled} onclick={() => pick(o.value)}>{o.label}{#if o.badge}<span class="o-count">{o.badge}</span>{/if}</button>
 	{/each}
 </div>
 

@@ -32,9 +32,9 @@
 			<li>
 				{#if i > 0 || root}<span class="o-sep" aria-hidden="true">{separator}</span>{/if}
 				{#if item.href && !last}
-					<a href={item.href}>{item.label}</a>
+					<a href={item.href} title={item.label}>{item.label}</a>
 				{:else}
-					<span class:o-current={last} aria-current={last ? 'page' : undefined}>{item.label}</span>
+					<span class:o-current={last} aria-current={last ? 'page' : undefined} title={item.label}>{item.label}</span>
 				{/if}
 			</li>
 		{/each}

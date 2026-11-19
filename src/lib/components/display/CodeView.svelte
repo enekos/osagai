@@ -27,9 +27,10 @@
 
 	const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+	const rows = $derived(html ?? (text ?? '').replace(/\r\n?/g, '\n').replace(/\n$/, '').split('\n').map(esc));
+
 	// One string, one {@html}: a 3000-line file is one DOM write, not 3000 components.
 	const body = $derived.by(() => {
-		const rows = html ?? (text ?? '').replace(/\r\n?/g, '\n').replace(/\n$/, '').split('\n').map(esc);
 		let out = '';
 		for (let i = 0; i < rows.length; i++) {
 			const n = start + i;
@@ -39,11 +40,13 @@
 		}
 		return out;
 	});
-	const digits = $derived(String(start + (html?.length ?? (text ?? '').split('\n').length)).length);
+	const digits = $derived(String(start + rows.length).length);
 </script>
 
+<!-- role=group exposes the label; tabindex makes the scroll region keyboard-scrollable when not wrapping -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <!-- eslint-disable-next-line svelte/no-at-html-tags -- `lines` is documented as pre-escaped HTML; `text` is escaped above -->
-<pre class="o-code" class:o-wrap={wrap} class:o-numbers={numbers} style:--o-digits={digits} aria-label={label}><code>{@html body}</code></pre>
+<pre class="o-code" class:o-wrap={wrap} class:o-numbers={numbers} style:--o-digits={digits} role="group" aria-label={label} tabindex={wrap ? undefined : 0}><code>{@html body}</code></pre>
 
 <style>
 	.o-code { margin: 0; padding: 10px 0; font-family: var(--o-mono); font-size: 13px; line-height: 1.6; color: var(--o-text); background: var(--o-surface); border: var(--o-line) solid var(--o-border-strong); overflow-x: auto; -webkit-overflow-scrolling: touch; tab-size: 4; -moz-tab-size: 4; white-space: pre; word-break: normal; }
